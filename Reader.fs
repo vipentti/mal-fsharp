@@ -23,7 +23,15 @@ module Reader =
         
 
     let rec ReadStr str = 
-        ReadForm (new Reader(Tokenizer str))
+        //ReadForm (new Reader(Tokenizer str))
+        let reader = new Reader(Tokenizer str)
+
+        let matches = EnsureMatch reader
+
+        if matches then
+            ReadForm reader
+        else
+            raise (ParseError("Missing matching parenthesis"))
         
 
     and Tokenizer str =
@@ -33,6 +41,19 @@ module Reader =
             [for m in matches -> m.Value.Trim()] |> List.filter (fun x -> x.Length > 0)
         else
             []
+
+    and EnsureMatch (reader : Reader) = 
+        let howMany pred = Seq.filter pred >> Seq.length
+
+        let parensMatch = howMany (fun x -> x = "(") reader.Tokens = howMany (fun x -> x = ")") reader.Tokens
+
+//        if not parensMatch then
+//            raise (ParseError("Missing matching parenthesis"))
+//        else
+//            discard
+        parensMatch
+
+
 
     and ReadForm (reader : Reader) = 
         match reader.Peek() with
@@ -46,7 +67,11 @@ module Reader =
 
         let mutable ret : list<MalType> = []
 
-        while not (reader.Peek().Equals(")")) && not (reader.IsDone()) do
+        //TODO(ville): Make this into a functional call
+        while not (reader.Peek().Equals(")")) do
+
+            if reader.IsDone() then raise (ParseError("Missing matching parenthesis"))
+            
             let value = ReadForm reader
 
             ret <- ret @ [value]

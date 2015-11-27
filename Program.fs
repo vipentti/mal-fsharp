@@ -30,6 +30,11 @@ module Main =
             if line = null || line = "quit" then
                 running <- false
             else
-                Console.WriteLine(REP line)
+                //Console.WriteLine(REP line)
+                try 
+                    let result = REP line
+                    Console.WriteLine(result)
+                with
+                    | ex -> printfn "Error: %A" ex
 
         0 // return an integer exit code
