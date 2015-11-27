@@ -36,15 +36,17 @@
             set env name evaled
             evaled
 
-        | List [Symbol "let*"; List bindings; calls] ->
+        | List [Symbol "let*"; bindings; calls] ->
             let newChain = makeEmptyEnv() :: env
 
             let updateEnv (key, value) =
                 match key with
                 | Symbol v -> set newChain v (EVAL value newChain)
                 | _ -> ()
-
-            splitListToPairs bindings |> List.iter updateEnv 
+            
+            match bindings with 
+            | List vs | Vector vs -> splitListToPairs vs |> List.iter updateEnv 
+            | _ -> raise(Exception("Invalid let* form"))
 
             EVAL calls newChain
             
