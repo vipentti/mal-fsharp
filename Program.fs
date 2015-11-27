@@ -35,6 +35,6 @@ module Main =
                     let result = REP line
                     Console.WriteLine(result)
                 with
-                    | ex -> printfn "Error: %A" ex
+                    | ex -> printfn "%s" ex.Message
 
         0 // return an integer exit code
