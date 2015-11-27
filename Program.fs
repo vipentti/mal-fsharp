@@ -37,7 +37,7 @@
             evaled
 
         | List [Symbol "let*"; bindings; calls] ->
-            let newChain = makeEmptyEnv() :: env
+            let newChain = makeNewEnv env [] []
 
             let updateEnv (key, value) =
                 match key with

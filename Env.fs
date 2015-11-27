@@ -25,6 +25,19 @@
         | Some v -> v
         | _ -> raise(Exception("No such value found"))
 
+    let makeNewEnv outer binds exprs = 
+        let newChain = (makeEmptyEnv ()) :: outer
+
+        let rec loop binds exprs = 
+            match binds, exprs with
+            | Symbol s :: symbs, n :: ns ->
+                set newChain s n
+                loop symbs ns
+            | [], [] -> newChain
+            | _ -> raise(Exception("Something went wrong"))
+
+        loop binds exprs
+
 
     let makeRootEnv () = 
         let env = makeEmptyEnv()
@@ -35,6 +48,16 @@
                 "-", singleMathOp (-);
                 "*", singleMathOp (*);
                 "/", singleMathOp (fun x y -> int(x/y));
+
+                "list", List;
+                "list?", isList;
+                "empty?", isEmpty;
+                "count", count;
+                "=", boolBinop (=);
+                ">", boolBinop (>);
+                ">=", boolBinop (>=);
+                "<", boolBinop (<);
+                "<=", boolBinop (<=);
             ] 
             |> List.iter (fun (x, y) -> set result x (PrimitiveFunction (x, y)))
 
