@@ -44,6 +44,11 @@ module Main =
         match ast with
         | Symbol v -> env.[v]
         | List vs -> vs |> List.map (fun x -> EVAL x env) |> List
+        | Vector vs -> vs |> List.map (fun x -> EVAL x env) |> Vector
+        | HashMap map ->
+            map
+            |> Map.map (fun key value -> EVAL value env)
+            |> HashMap
         | _ -> ast
 
     and EVAL ast (env : Map<string, MalType>) =
