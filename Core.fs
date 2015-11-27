@@ -41,3 +41,30 @@
         match values with
         | a :: b :: rest -> Bool (op a b)
         | _ -> Bool false
+
+
+    let prstr args = 
+        args
+        |> List.map (Printer.PrStr true)
+        |> String.concat " "
+        |> Types.String
+
+    let str args = 
+        args
+        |> List.map (Printer.PrStr false)
+        |> String.concat ""
+        |> Types.String
+
+    let prn args = 
+        args
+        |> List.map (Printer.PrStr true)
+        |> String.concat " "
+        |> printfn "%s"
+        Nil
+
+    let println args = 
+        args
+        |> List.map (Printer.PrStr false)
+        |> String.concat " "
+        |> printfn "%s"
+        Nil

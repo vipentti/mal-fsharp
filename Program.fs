@@ -31,6 +31,14 @@
 
     and EVAL ast (env : EnvChain) =
         match ast with
+
+        | List (Symbol "do" :: rest)->
+            let evaled = evalAst (List rest) env
+
+            match evaled with 
+            | List results -> List.rev results |> List.head
+            | _ -> evaled
+
         | List [Symbol "def!"; Symbol name; form] ->
             let evaled = EVAL form env
             set env name evaled
@@ -64,7 +72,7 @@
         Printer.PrStr exp
 
     and REP str =
-        str |> READ |> (fun x -> EVAL x initialEnv) |> PRINT
+        str |> READ |> (fun x -> EVAL x initialEnv) |> PRINT true
 
     [<EntryPoint>]
     let main argv = 

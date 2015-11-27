@@ -58,6 +58,11 @@
                 ">=", boolBinop (>=);
                 "<", boolBinop (<);
                 "<=", boolBinop (<=);
+
+                "pr-str", prstr;
+                "str", str;
+                "prn", prn;
+                "println", println;
             ] 
             |> List.iter (fun (x, y) -> set result x (PrimitiveFunction (x, y)))
 
