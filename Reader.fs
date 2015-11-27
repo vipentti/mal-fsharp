@@ -37,8 +37,9 @@ module Reader =
     and Tokenizer str =
         let matches = Regex.Matches(str, PATTERN)
 
+        //NOTE(ville): The item at index 1 in each matched group is the actual match string
         if matches.Count > 0 then
-            [for m in matches -> m.Value.Trim()] |> List.filter (fun x -> x.Length > 0)
+            [for m in matches -> (m.Groups.Item 1).Value.Trim()] |> List.filter (fun x -> x.Length > 0)
         else
             []
 
@@ -47,18 +48,16 @@ module Reader =
 
         let parensMatch = howMany (fun x -> x = "(") reader.Tokens = howMany (fun x -> x = ")") reader.Tokens
 
-//        if not parensMatch then
-//            raise (ParseError("Missing matching parenthesis"))
-//        else
-//            discard
         parensMatch
 
 
 
     and ReadForm (reader : Reader) = 
         match reader.Peek() with
-        | "(" -> ReadList reader
-        | _   -> ReadAtom reader
+        | "("   -> ReadList reader
+        | "nil" -> ReadNil reader
+        | "true" | "false" -> ReadBool reader
+        | _     -> ReadAtom reader
 
 
     and ReadList (reader : Reader) = 
@@ -88,5 +87,15 @@ module Reader =
         with
             | _ -> Atom value
             
+
+    and ReadNil (reader : Reader) =
+        ignore (reader.Next())
+        Nil
+
+    and ReadBool (reader : Reader) = 
+        match reader.Next() with
+        | "true" | "#t" -> Bool true
+        | "false" | "#f" -> Bool false
+        | _ -> Bool false
 
     

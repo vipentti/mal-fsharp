@@ -11,4 +11,5 @@ module Types =
         | Bool of bool
         | String of string
         | Number of int
+        | Nil
 
