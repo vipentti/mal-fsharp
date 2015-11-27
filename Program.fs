@@ -39,6 +39,31 @@
             | List results -> List.rev results |> List.head
             | _ -> evaled
 
+        | List [Symbol "if"; condition; first] ->
+
+            let evalCond = EVAL condition env
+            match evalCond with
+            | Nil | Bool false -> 
+                Nil
+            | _ -> EVAL first env
+
+        | List [Symbol "if"; condition; first; last] ->
+
+            let evalCond = EVAL condition env
+            match evalCond with
+            | Nil | Bool false -> EVAL last env
+            | _ -> EVAL first env
+
+//        | List (Symbol "if" :: condition :: first :: last) -> 
+//
+//            let evalCond = EVAL condition env
+//
+//            match evalCond with
+//            | Nil | Bool false -> 
+//                Nil
+//            | _ -> EVAL first env
+
+
         | List [Symbol "def!"; Symbol name; form] ->
             let evaled = EVAL form env
             set env name evaled
