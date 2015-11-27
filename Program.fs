@@ -39,29 +39,20 @@
             | List results -> List.rev results |> List.head
             | _ -> evaled
 
-        | List [Symbol "if"; condition; first] ->
 
+        | List (Symbol "if" :: condition :: rest) ->
             let evalCond = EVAL condition env
-            match evalCond with
-            | Nil | Bool false -> 
+            match evalCond, rest with
+            | Nil, [first; last] | Bool false, [first; last] ->
+                EVAL last env
+            | Nil, [first] | Bool false, [first] -> 
                 Nil
-            | _ -> EVAL first env
-
-        | List [Symbol "if"; condition; first; last] ->
-
-            let evalCond = EVAL condition env
-            match evalCond with
-            | Nil | Bool false -> EVAL last env
-            | _ -> EVAL first env
-
-//        | List (Symbol "if" :: condition :: first :: last) -> 
-//
-//            let evalCond = EVAL condition env
-//
-//            match evalCond with
-//            | Nil | Bool false -> 
-//                Nil
-//            | _ -> EVAL first env
+            | _, [first] ->
+                EVAL first env
+            | _, [first; _] ->
+                EVAL first env
+            | _, _ -> 
+                raise (Exception("Invalid if form"))
 
 
         | List [Symbol "def!"; Symbol name; form] ->
