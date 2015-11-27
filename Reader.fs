@@ -117,7 +117,9 @@ module Reader =
 
     and ReadUntil (reader : Reader) endChar lst = 
         match reader.Peek() with
-        | x when x.Equals(endChar) -> lst
+        | x when x.Equals(endChar) -> 
+            ignore (reader.Next())
+            lst
         | _ -> ReadUntil reader endChar (lst @ [ReadForm reader])
 
     and ReadHashMap (reader : Reader) = 

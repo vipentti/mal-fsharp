@@ -26,6 +26,7 @@ module Main =
             "+", singleMathOp (+);
             "-", singleMathOp (-);
             "*", singleMathOp (*);
+            "/", singleMathOp (fun x y -> int(x/y));
         ] 
         |> List.map (fun (x, y) -> x, PrimitiveFunction (x,y))
         |> Map.ofList
