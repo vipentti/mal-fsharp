@@ -6,11 +6,12 @@ module Types =
         inherit System.Exception(sprintf "%s" s)
 
     type MalType =
-        | Atom of string
+        | Nil
         | List of list<MalType>
         | Vector of list<MalType>
         | Bool of bool
+        | Symbol of string
         | String of string
+        | Keyword of string
         | Number of int
-        | Nil
 

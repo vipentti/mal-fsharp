@@ -20,11 +20,11 @@ module Reader =
 
         member this.IsDone() =
             position = this.Tokens.Length - 1
-        
-
 
     let makeParseError item = 
         "expected '" + item + "', got EOF"
+
+    let stripCharacters chars = String.collect (fun c -> if Seq.exists((=)c) chars then "" else string c)
 
     let rec ReadStr str = 
         //ReadForm (new Reader(Tokenizer str))
@@ -41,6 +41,7 @@ module Reader =
     and Tokenizer str =
         let nrQuotes s = 
             s 
+            |> stripCharacters "\\\""
             |> Seq.filter (fun x -> x = '"')
             |> Seq.length
 
@@ -124,14 +125,22 @@ module Reader =
         | "true" -> Bool true
         | "false" -> Bool false
         | str when value.StartsWith("\"") -> 
-            str
-            |> Seq.skip 1
-            |> Seq.takeWhile (fun c -> c <> '"')
-            |> System.String.Concat
-            |> String 
+            //let replaced = str.Replace("\\\"", "\"").Replace("\\n", "\n").Replace("\\\\", "\\")
+            let temp = 
+                str
+                |> Seq.skip 1
+                |> Seq.take (str.Length - 2)
+                //|> Seq.takeWhile (fun c -> c <> '"')
+                //NOTE(ville): Find out why this does not work proper
+                |> Seq.toArray
+                |> fun x -> new string(x)
+                //|> System.String.Concat
+
+            let replaced = temp.Replace("\\\"", "\"").Replace("\\n", "\n").Replace("\\\\", "\\")
+            String replaced
         | _ ->
             try
                 let number = System.Int32.Parse(value)
                 Number number
             with
-                | _ -> Atom value
+                | _ -> Symbol value
