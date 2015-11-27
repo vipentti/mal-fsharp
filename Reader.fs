@@ -1,6 +1,4 @@
-﻿namespace MAL
-
-module Reader = 
+﻿module Reader 
     open System.Text.RegularExpressions
     open Types
 
@@ -122,31 +120,35 @@ module Reader =
             lst
         | _ -> ReadUntil reader endChar (lst @ [ReadForm reader])
 
+    and splitListToPairs lst = 
+
+        let  splitList op lst =
+            lst 
+            |> Seq.mapi (fun i el -> el, i)
+            |> Seq.filter (fun (el, i) -> op (i % 2) 0)
+            |> Seq.map fst
+            |> Seq.toList
+
+        let takeEvenIndices = 
+            splitList (=)
+
+        let takeOddIndices = 
+            splitList (<>)
+        
+        let keys = takeEvenIndices lst
+        let vals = takeOddIndices lst
+
+        List.zip keys vals
+    
+
     and ReadHashMap (reader : Reader) = 
         ignore (reader.Next())
 
-        let takeEvenIndices lst = 
-            lst 
-            |> Seq.mapi (fun i el -> el, i)
-            |> Seq.filter (fun (el, i) -> i % 2 = 0)
-            |> Seq.map fst
-            |> Seq.toList
-
-        let takeOddIndices lst = 
-            lst 
-            |> Seq.mapi (fun i el -> el, i)
-            |> Seq.filter (fun (el, i) -> i % 2 <> 0)
-            |> Seq.map fst
-            |> Seq.toList
-                
-
         let values = ReadUntil reader "}" []
 
-        let keys = takeEvenIndices values
-        let vals = takeOddIndices values
-
         let result = 
-            List.zip keys vals
+            //List.zip keys vals
+            splitListToPairs values
             |> Map.ofList
 
         HashMap result

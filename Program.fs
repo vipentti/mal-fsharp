@@ -1,35 +1,13 @@
-﻿namespace MAL
-
-module Main = 
+﻿module Main 
     open System
     open Reader
     open Printer
     open Types
 
-
-    let rec unpackNumber value = 
-        match value with 
-        | Number x -> x
-        | List [n] -> unpackNumber n
-        | String x -> int(float(x))
-        | _        -> raise (Exception("Typemismatch"))
+    open Env
 
 
-    let singleMathOp op values =
-        let numbers = values |> List.map unpackNumber
-        let result = numbers |> List.reduce op
-
-        Number result
-
-    let replEnv = 
-        [
-            "+", singleMathOp (+);
-            "-", singleMathOp (-);
-            "*", singleMathOp (*);
-            "/", singleMathOp (fun x y -> int(x/y));
-        ] 
-        |> List.map (fun (x, y) -> x, PrimitiveFunction (x,y))
-        |> Map.ofList
+    let initialEnv = makeRootEnv ()
 
     let rec READ str =
         Reader.ReadStr str
@@ -40,9 +18,9 @@ module Main =
         | PrimitiveFunction(_, f) -> f args
         | _ -> raise(Exception("Invalid function"))
 
-    and evalAst ast (env : Map<string, MalType>) = 
+    and evalAst ast (env : EnvChain) = 
         match ast with
-        | Symbol v -> env.[v]
+        | Symbol v -> get env v
         | List vs -> vs |> List.map (fun x -> EVAL x env) |> List
         | Vector vs -> vs |> List.map (fun x -> EVAL x env) |> Vector
         | HashMap map ->
@@ -51,8 +29,25 @@ module Main =
             |> HashMap
         | _ -> ast
 
-    and EVAL ast (env : Map<string, MalType>) =
+    and EVAL ast (env : EnvChain) =
         match ast with
+        | List [Symbol "def!"; Symbol name; form] ->
+            let evaled = EVAL form env
+            set env name evaled
+            evaled
+
+        | List [Symbol "let*"; List bindings; calls] ->
+            let newChain = makeEmptyEnv() :: env
+
+            let updateEnv (key, value) =
+                match key with
+                | Symbol v -> set newChain v (EVAL value newChain)
+                | _ -> ()
+
+            splitListToPairs bindings |> List.iter updateEnv 
+
+            EVAL calls newChain
+            
         | List (func :: args) -> 
             let funcEval = evalAst func env
             let rest = evalAst (List args) env
@@ -67,7 +62,7 @@ module Main =
         Printer.PrStr exp
 
     and REP str =
-        str |> READ |> (fun x -> EVAL x replEnv) |> PRINT
+        str |> READ |> (fun x -> EVAL x initialEnv) |> PRINT
 
     [<EntryPoint>]
     let main argv = 

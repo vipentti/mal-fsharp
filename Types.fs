@@ -1,6 +1,4 @@
-﻿namespace MAL
-
-module Types = 
+﻿module Types 
 
     type ParseError (s) =
         inherit System.Exception(sprintf "%s" s)
@@ -135,3 +133,6 @@ module Types =
                 | :? MalType as y -> MalType.compare x y
                 | _ -> invalidArg "yobj" "Cannot compare values of different types."
 
+
+    and Env = System.Collections.Generic.Dictionary<string, MalType>
+    and EnvChain = Env list

@@ -1,6 +1,4 @@
-﻿namespace MAL
-
-module Printer =
+﻿module Printer
     open Types
 
     let printString (str : string) = 
