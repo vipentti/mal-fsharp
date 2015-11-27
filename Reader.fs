@@ -97,15 +97,45 @@ module Reader =
 
     and ReadForm (reader : Reader) = 
         match reader.Peek() with
-        | "("   -> ReadList reader
-        | "["   -> ReadVector reader
-        | _     -> ReadAtom reader
+        | "(" -> ReadList reader
+        | "[" -> ReadVector reader
+        | "{" -> ReadHashMap reader
+        | _   -> ReadAtom reader
 
 
     and ReadUntil (reader : Reader) endChar lst = 
         match reader.Peek() with
         | x when x.Equals(endChar) -> lst
         | _ -> ReadUntil reader endChar (lst @ [ReadForm reader])
+
+    and ReadHashMap (reader : Reader) = 
+        ignore (reader.Next())
+
+        let takeEvenIndices lst = 
+            lst 
+            |> Seq.mapi (fun i el -> el, i)
+            |> Seq.filter (fun (el, i) -> i % 2 = 0)
+            |> Seq.map fst
+            |> Seq.toList
+
+        let takeOddIndices lst = 
+            lst 
+            |> Seq.mapi (fun i el -> el, i)
+            |> Seq.filter (fun (el, i) -> i % 2 <> 0)
+            |> Seq.map fst
+            |> Seq.toList
+                
+
+        let values = ReadUntil reader "}" []
+
+        let keys = takeEvenIndices values
+        let vals = takeOddIndices values
+
+        let result = 
+            List.zip keys vals
+            |> Map.ofList
+
+        HashMap result
 
     and ReadList (reader : Reader) = 
         //Skip the initial (
@@ -124,22 +154,8 @@ module Reader =
         | "nil" -> Nil
         | "true" -> Bool true
         | "false" -> Bool false
-        | str when value.StartsWith("\"") -> 
-            //let replaced = str.Replace("\\\"", "\"").Replace("\\n", "\n").Replace("\\\\", "\\")
-//            let temp = 
-//                str
-//                |> Seq.skip 1
-//                |> Seq.take (str.Length - 2)
-//                //|> Seq.takeWhile (fun c -> c <> '"')
-//                //NOTE(ville): Find out why this does not work proper
-//                |> Seq.toArray
-//                |> fun x -> new string(x)
-                //|> System.String.Concat
-            let temp = str.Substring(1, str.Length - 2)
-            let replaced = temp.Replace("\\\"", "\"").Replace("\\n", "\n").Replace("\\\\", "\\")
-            String replaced
-        | kw when value.StartsWith(":") ->
-            Keyword ("\xff" + kw.Substring(1))
+        | str when value.StartsWith("\"") -> String (str.Substring(1, str.Length - 2).Replace("\\\"", "\"").Replace("\\n", "\n").Replace("\\\\", "\\"))
+        | kw when value.StartsWith(":") -> Keyword ("\xff" + kw.Substring(1))
         | _ ->
             try
                 let number = System.Int32.Parse(value)

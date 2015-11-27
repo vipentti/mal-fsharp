@@ -14,4 +14,5 @@ module Types =
         | String of string
         | Keyword of string
         | Number of int
+        | HashMap of Collections.Map<MalType, MalType>
 
