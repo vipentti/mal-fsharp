@@ -126,18 +126,20 @@ module Reader =
         | "false" -> Bool false
         | str when value.StartsWith("\"") -> 
             //let replaced = str.Replace("\\\"", "\"").Replace("\\n", "\n").Replace("\\\\", "\\")
-            let temp = 
-                str
-                |> Seq.skip 1
-                |> Seq.take (str.Length - 2)
-                //|> Seq.takeWhile (fun c -> c <> '"')
-                //NOTE(ville): Find out why this does not work proper
-                |> Seq.toArray
-                |> fun x -> new string(x)
+//            let temp = 
+//                str
+//                |> Seq.skip 1
+//                |> Seq.take (str.Length - 2)
+//                //|> Seq.takeWhile (fun c -> c <> '"')
+//                //NOTE(ville): Find out why this does not work proper
+//                |> Seq.toArray
+//                |> fun x -> new string(x)
                 //|> System.String.Concat
-
+            let temp = str.Substring(1, str.Length - 2)
             let replaced = temp.Replace("\\\"", "\"").Replace("\\n", "\n").Replace("\\\\", "\\")
             String replaced
+        | kw when value.StartsWith(":") ->
+            Keyword ("\xff" + kw.Substring(1))
         | _ ->
             try
                 let number = System.Int32.Parse(value)
