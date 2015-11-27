@@ -100,8 +100,20 @@ module Reader =
         | "(" -> ReadList reader
         | "[" -> ReadVector reader
         | "{" -> ReadHashMap reader
+        | "'" | "`" | "~" | "~@" -> ReadMacro reader
         | _   -> ReadAtom reader
 
+
+    and ReadMacro (reader : Reader) = 
+        let macro = reader.Next()
+
+        match macro with 
+        | "'" -> List ((Symbol "quote") :: [ReadForm reader])
+        | "`" -> List ((Symbol "quasiquote") :: [ReadForm reader])
+        | "~" -> List ((Symbol "unquote") :: [ReadForm reader])
+        | "~@" -> List ((Symbol "splice-unquote") :: [ReadForm reader])
+        | _ -> Nil
+        
 
     and ReadUntil (reader : Reader) endChar lst = 
         match reader.Peek() with
