@@ -4,18 +4,64 @@ module Main =
     open System
     open Reader
     open Printer
+    open Types
 
-    let READ str =
+
+    let rec unpackNumber value = 
+        match value with 
+        | Number x -> x
+        | List [n] -> unpackNumber n
+        | String x -> int(float(x))
+        | _        -> raise (Exception("Typemismatch"))
+
+
+    let singleMathOp op values =
+        let numbers = values |> List.map unpackNumber
+        let result = numbers |> List.reduce op
+
+        Number result
+
+    let replEnv = 
+        [
+            "+", singleMathOp (+);
+            "-", singleMathOp (-);
+            "*", singleMathOp (*);
+        ] 
+        |> List.map (fun (x, y) -> x, PrimitiveFunction (x,y))
+        |> Map.ofList
+
+    let rec READ str =
         Reader.ReadStr str
 
-    let EVAL ast env =
-        ast
 
-    let PRINT exp =
+    and apply fn args = 
+        match fn with
+        | PrimitiveFunction(_, f) -> f args
+        | _ -> raise(Exception("Invalid function"))
+
+    and evalAst ast (env : Map<string, MalType>) = 
+        match ast with
+        | Symbol v -> env.[v]
+        | List vs -> vs |> List.map (fun x -> EVAL x env) |> List
+        | _ -> ast
+
+    and EVAL ast (env : Map<string, MalType>) =
+        match ast with
+        | List (func :: args) -> 
+            let funcEval = evalAst func env
+            let rest = evalAst (List args) env
+
+            match rest with
+            | List vs -> apply funcEval vs
+            | x -> apply funcEval [x]
+
+        | _ -> evalAst ast env
+
+    and PRINT exp =
         Printer.PrStr exp
 
-    let REP str =
-        str |> READ |> (fun x -> EVAL x "") |> PRINT
+    and REP str =
+        str |> READ |> (fun x -> EVAL x replEnv) |> PRINT
 
     [<EntryPoint>]
     let main argv = 
