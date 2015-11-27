@@ -112,19 +112,6 @@ module Reader =
 
         List (ReadUntil reader ")" [])
 
-//        let mutable ret : list<MalType> = []
-//
-//        //TODO(ville): Make this into a functional call
-//        while not (reader.Peek().Equals(")")) do
-//
-//            if reader.IsDone() then raise (ParseError("Missing matching parenthesis"))
-//            
-//            let value = ReadForm reader
-//
-//            ret <- ret @ [value]
-//
-//        List ret
-
     and ReadVector (reader : Reader) = 
         ignore (reader.Next())
         Vector (ReadUntil reader "]" [])
@@ -136,22 +123,15 @@ module Reader =
         | "nil" -> Nil
         | "true" -> Bool true
         | "false" -> Bool false
+        | str when value.StartsWith("\"") -> 
+            str
+            |> Seq.skip 1
+            |> Seq.takeWhile (fun c -> c <> '"')
+            |> System.String.Concat
+            |> String 
         | _ ->
             try
                 let number = System.Int32.Parse(value)
                 Number number
             with
                 | _ -> Atom value
-            
-
-//    and ReadNil (reader : Reader) =
-//        ignore (reader.Next())
-//        Nil
-//
-//    and ReadBool (reader : Reader) = 
-//        match reader.Next() with
-//        | "true" | "#t" -> Bool true
-//        | "false" | "#f" -> Bool false
-//        | _ -> Bool false
-//
-    
