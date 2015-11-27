@@ -22,6 +22,10 @@
 
         | Nil -> "nil"
 
+        | Function _ -> "#<function>"
+
+        | PrimitiveFunction _ -> "#<primitive_function>"
+
         | HashMap v ->
             v
             |> Map.toList

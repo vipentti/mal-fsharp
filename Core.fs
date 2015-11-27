@@ -43,6 +43,8 @@
         | _ -> Bool false
 
 
+    let noop (args : list<MalType>) = Nil
+        
     let prstr args = 
         args
         |> List.map (Printer.PrStr true)

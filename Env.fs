@@ -25,6 +25,10 @@
         | Some v -> v
         | _ -> raise(Exception("No such value found"))
 
+    let private getNextValue =
+        let counter = ref 0
+        fun () -> System.Threading.Interlocked.Increment(counter)
+
     let makeNewEnv outer binds exprs = 
         let newChain = (makeEmptyEnv ()) :: outer
 
@@ -38,6 +42,11 @@
 
         loop binds exprs
 
+    let makePrimitiveFunction f = 
+        PrimitiveFunction(getNextValue(), f)
+
+    let makeFunction f body binds env = 
+        Function(getNextValue(), f, body, binds, env)
 
     let makeRootEnv () = 
         let env = makeEmptyEnv()
@@ -64,9 +73,7 @@
                 "prn", prn;
                 "println", println;
             ] 
-            |> List.iter (fun (x, y) -> set result x (PrimitiveFunction (x, y)))
+            |> List.iter (fun (x, y) -> set result x (makePrimitiveFunction y))
 
         result
-//            |> List.map (fun (x, y) -> x, PrimitiveFunction (x,y))
-//            |> 
         

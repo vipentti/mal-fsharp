@@ -16,6 +16,9 @@
     and apply fn args = 
         match fn with
         | PrimitiveFunction(_, f) -> f args
+        | Function(_, _, body, binds, env) ->
+            let newEnv = makeNewEnv env binds args
+            EVAL body newEnv
         | _ -> raise(Exception("Invalid function"))
 
     and evalAst ast (env : EnvChain) = 
@@ -73,14 +76,27 @@
             | _ -> raise(Exception("Invalid let* form"))
 
             EVAL calls newChain
-            
-        | List (func :: args) -> 
-            let funcEval = evalAst func env
-            let rest = evalAst (List args) env
 
-            match rest with
-            | List vs -> apply funcEval vs
-            | x -> apply funcEval [x]
+        | List [Symbol "fn*"; (List args) | (Vector args); body] ->
+            let temp = makeFunction Core.noop body args env
+
+            temp
+            
+            
+        | List (func :: args) as item-> 
+            let values = evalAst item env
+            match values with 
+            | List (func :: rest) ->
+                apply func rest
+            | _ -> raise(Exception("Invalid form"))
+//            let funcEval = evalAst func env
+//            let rest = evalAst (List args) env
+//            let funcEval = List.head values
+//            let rest = List.tail values
+//
+//            match rest with
+//            | List vs -> apply funcEval vs
+//            | x -> apply funcEval [x]
 
         | _ -> evalAst ast env
 
