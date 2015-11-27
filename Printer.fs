@@ -13,7 +13,12 @@ module Printer =
         | String v -> printString v
         | Keyword v -> ":" + v.Substring(1)
         | Bool v -> match v with | true -> "true" | false -> "false"
-        | List vs -> List.map PrStr vs |> String.concat " " |> (fun x -> "(" + x + ")")
+        | List vs -> 
+            List.map PrStr vs |> String.concat " " |> (fun x -> "(" + x + ")")
+
+        | Vector vs -> 
+            List.map PrStr vs |> String.concat " " |> (fun x -> "[" + x + "]")
+
         | Nil -> "nil"
 
         | HashMap v ->
