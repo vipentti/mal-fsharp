@@ -94,14 +94,6 @@
                 | _ -> false
             | _ -> false
 
-//        let get_macro env ast =
-//            match ast with
-//            | List (Symbol name :: _) ->
-//                match (get env name) with
-//                | Macro(_) as v -> v
-//                | _ -> raise(Exception("Not a macro"))
-//            | _ -> raise(Exception("Not a macro"))
-//            
         let rec loop env ast = 
             match is_macro_call env ast, ast with 
             | true, (List (Symbol name :: args) as item) ->
@@ -138,67 +130,45 @@
 
         | _ -> raise(Exception("Invalid fn* form"))
 
-    and eval (env : EnvChain) oAst =
-
-        match oAst with
-        | List _ -> 
-            let expandedAst = macroexpand env oAst
-
-            match expandedAst with
-            | List _ ->
-                let ast = expandedAst
-                match ast with
-
-                | List (Symbol "do" :: rest) -> doForm env rest |> eval env
-
-                | List (Symbol "if" :: rest) -> ifForm env rest |> eval env
-
-                | List [Symbol "def!"; Symbol name; form] ->
-                    let evaled = eval env form
-                    set env name evaled
-                    evaled
-
-                | List [Symbol "defmacro!"; Symbol name; form] ->
-                    let evaled = eval env form
-                    let macro = Env.makeMacro Core.noop evaled [] env
+    and eval (env : EnvChain) = function
+        | List _ as item -> 
+            match macroexpand env item with
+            | List (Symbol "do" :: rest) -> doForm env rest |> eval env
+            | List (Symbol "if" :: rest) -> ifForm env rest |> eval env
+            | List [Symbol "def!"; Symbol name; form] ->
+                let evaled = eval env form
+                set env name evaled
+                evaled
+            | List [Symbol "defmacro!"; Symbol name; form] ->
+                let evaled = eval env form
+                match evaled with
+                | Function(_, f, body, binds, outer) ->
+                    let macro = Env.makeMacro f body binds outer
                     set env name macro
                     macro
+                | _ -> raise(Exception("Invalid macro form"))
 
-                | List (Symbol "let*" :: rest) ->
-                    let newChain, calls = letStarForm env rest
-                    eval newChain calls
+            | List (Symbol "let*" :: rest) ->
+                let newChain, calls = letStarForm env rest
+                eval newChain calls
 
-                | List (Symbol "fn*" :: rest) -> fnStarForm env rest
-
-                | List [Symbol "quote"; rest] -> rest
-
-                | List [Symbol "quasiquote"; rest] -> quasiquote rest |> eval env 
-
-                | List [Symbol "macroexpand"; args] -> macroexpand env args
-                    
-                | List (func :: args) as item-> 
-                    let values = evalAst env item
-                    match values with 
-                    | List (func :: args) ->
-                        match func with
-                        | PrimitiveFunction(_, f) -> f args
-                        | Function(_, f, body, binds, outer) ->
-                            f args
-
-    //                        let newEnv = makeNewEnv outer binds args
-    //                        body |> eval newEnv
-
-                        | Macro(_, _, body, binds, outer) ->
-                            let newEnv = makeNewEnv outer binds args
-                            body |> eval newEnv
-
-                        | _ -> raise(Exception("Invalid function"))
-                    | _ -> raise(Exception("Invalid form"))
-
-                | _ -> evalAst env ast
-
-            | _ -> expandedAst
-        | _ -> evalAst env oAst
+            | List (Symbol "fn*" :: rest) -> fnStarForm env rest
+            | List [Symbol "quote"; rest] -> rest
+            | List [Symbol "quasiquote"; rest] -> quasiquote rest |> eval env 
+            | List [Symbol "macroexpand"; args] -> macroexpand env args
+            | List (_ :: _) as item-> 
+                let values = evalAst env item
+                match values with 
+                | List (func :: args) ->
+                    match func with
+                    | PrimitiveFunction(_, f) -> f args
+                    | Function(_, _, body, binds, outer) ->
+                        let newEnv = makeNewEnv outer binds args
+                        body |> eval newEnv
+                    | _ -> raise(Exception("Invalid function"))
+                | _ -> raise(Exception("Invalid form"))
+            | item -> item
+        | item -> evalAst env item
 
     and READ str =
         Reader.ReadStr str
