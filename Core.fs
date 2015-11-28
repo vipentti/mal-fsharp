@@ -130,7 +130,10 @@
         | _ -> Nil
 
     let rest = function
-        | [(List vs) | (Vector vs)] -> List (List.tail vs)
+        | [(List vs) | (Vector vs)] -> 
+            match vs with
+            | [] -> List []
+            | _  -> List (List.tail vs)
         | _ -> Nil
 
     let coreFunctions = [ "+", singleMathOp (+)
