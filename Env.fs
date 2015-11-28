@@ -23,7 +23,7 @@
     let get (env : EnvChain) key = 
         match find env key with
         | Some v -> v
-        | _ -> raise(Exception("No such value found"))
+        | _ -> raise(Exception(sprintf "'%s' not found" key))
 
     let private getNextValue =
         let counter = ref 0

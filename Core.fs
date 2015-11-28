@@ -211,6 +211,37 @@
 
         | _ -> raise(Exception("Invalid arguments"))
 
+    let get = function
+        | [(HashMap mp); key] ->
+            if mp.ContainsKey key then
+                mp.[key]
+            else
+                Nil
+        | _ -> Nil
+
+    let contains = function
+        | [(HashMap mp); key] ->
+            Bool (mp.ContainsKey key)
+        | _ -> raise(Exception("Invalid arguments"))
+
+    let keys = function
+        | [HashMap mp] ->
+            mp
+            |> Map.toList
+            |> List.map fst
+            |> Types.List
+        | _ -> raise(Exception("Invalid arguments"))
+
+    let vals = function
+        | [HashMap mp] ->
+            mp
+            |> Map.toList
+            |> List.map snd
+            |> Types.List
+        | _ -> raise(Exception("Invalid arguments"))
+    
+    let sequential = isOfPattern (function Vector _ | List _ -> true | _ -> false)
+
     let throw = function
         | [value] -> raise <| MalException value
         | _ -> raise(Exception("Invalid throw arguments"))
@@ -257,7 +288,7 @@
                           "throw", throw
 
                           "symbol", (function [String s] -> Symbol s | _ -> raise(Exception("Invalid symbol")))
-                          "keyword", (function [String s] -> Keyword s | [Keyword _ as kw] -> kw | _ -> raise(Exception("Invalid symbol")))
+                          "keyword", (function [String s] -> Keyword ("\xff" + s) | [Keyword _ as kw] -> kw | _ -> raise(Exception("Invalid symbol")))
 
 
                           "symbol?", isSymbol
@@ -269,9 +300,9 @@
 
                           "assoc", assoc
                           "dissoc", dissoc
-                          "get", noop
-                          "contains?", noop
-                          "keys", noop
-                          "vals", noop
-                          "sequential?", noop
+                          "get", get
+                          "contains?", contains
+                          "keys", keys
+                          "vals", vals
+                          "sequential?", sequential
                           ]
