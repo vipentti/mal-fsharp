@@ -16,11 +16,6 @@
 
         Number result
 
-    let isList args = 
-        match args with 
-        | List xs :: anything -> Bool true
-        | _ -> Bool false
-
     let isEmpty args = 
         match args with 
         | ((List xs) | (Vector xs)) :: anything -> Bool (xs.Length = 0)
@@ -137,35 +132,19 @@
         | _ -> Nil
 
 
-    let isNil = function
-        | [Nil] -> Bool true
-        | [_] -> Bool false
-        | _ -> raise(Exception("Invalid nil? arguments"))
 
-    let isTrue = function
-        | [Bool true] -> Bool true
-        | [_] -> Bool false
-        | _ -> raise(Exception("Invalid true? arguments"))
+    let isOfPattern f = function
+        | [arg] -> if f arg then (Bool true) else Bool false
+        | _ -> raise(Exception("Invalid arguments to pattern"))
 
-    let isFalse = function
-        | [Bool false] -> Bool true
-        | [_] -> Bool false
-        | _ -> raise(Exception("Invalid false? arguments"))
-
-    let isSymbol = function
-        | [Symbol _] -> Bool true
-        | [_] -> Bool false
-        | _ -> raise(Exception("Invalid symbol? arguments"))
-
-    let isKeyword = function
-        | [Keyword _] -> Bool true
-        | [_] -> Bool false
-        | _ -> raise(Exception("Invalid keyword? arguments"))
-
-    let isVector = function
-        | [Vector _] -> Bool true
-        | [_] -> Bool false
-        | _ -> raise(Exception("Invalid keyword? arguments"))
+    let isList = isOfPattern (function List _ -> true | _ -> false)
+    let isNil = isOfPattern (function Nil -> true | _ -> false)
+    let isTrue = isOfPattern (function Bool true -> true | _ -> false)
+    let isFalse = isOfPattern (function Bool false -> true | _ -> false)
+    let isSymbol = isOfPattern (function Symbol _ -> true | _ -> false)
+    let isKeyword = isOfPattern (function Keyword _ -> true | _ -> false)
+    let isVector = isOfPattern (function Vector _ -> true | _ -> false)
+    let isMap = isOfPattern (function HashMap _ -> true | _ -> false)
 
 
     let apply = function
@@ -204,6 +183,33 @@
         | args ->
             Vector args
 
+    let hashMap = function
+        | args -> 
+            Reader.splitListToPairs args
+            |> Map.ofList
+            |> HashMap
+
+    let assoc = function
+        | (HashMap mp) :: args ->
+            let nextMap = 
+                Reader.splitListToPairs args
+                |> Map.ofList
+
+            let ret = 
+                Map.fold (fun acc key value -> Map.add key value acc) mp nextMap
+
+            HashMap ret
+
+        | _ -> raise(Exception("Invalid arguments"))
+
+    let dissoc = function
+        | (HashMap mp) :: args -> 
+
+            mp
+            |> Map.filter (fun key _ -> not (List.exists (fun x -> x = key) args))
+            |> HashMap
+
+        | _ -> raise(Exception("Invalid arguments"))
 
     let throw = function
         | [value] -> raise <| MalException value
@@ -245,6 +251,9 @@
 
                           "map", map
 
+                          "map?", isMap
+                          "hash-map", hashMap
+
                           "throw", throw
 
                           "symbol", (function [String s] -> Symbol s | _ -> raise(Exception("Invalid symbol")))
@@ -256,4 +265,13 @@
                           "vector?", isVector
 
                           "vector", vector
+
+
+                          "assoc", assoc
+                          "dissoc", dissoc
+                          "get", noop
+                          "contains?", noop
+                          "keys", noop
+                          "vals", noop
+                          "sequential?", noop
                           ]
