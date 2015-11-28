@@ -220,24 +220,41 @@
         set env "*ARGV*" malArgs
         set env "*host-language*" (String("F-Sharp"))
 
-
         REP env "(def! not (fn* (a) (if a false true)))" |> ignore
         REP env "(def! load-file (fn* (f) (eval (read-string (str \"(do \" (slurp f) \")\")))))" |> ignore
         REP env "(defmacro! cond (fn* (& xs) (if (> (count xs) 0) (list 'if (first xs) (if (> (count xs) 1) (nth xs 1) (throw \"odd number of forms to cond\")) (cons 'cond (rest (rest xs)))))))" |> ignore
         REP env "(defmacro! or (fn* (& xs) (if (empty? xs) nil (if (= 1 (count xs)) (first xs) `(let* (or_FIXME ~(first xs)) (if or_FIXME or_FIXME (or ~@(rest xs))))))))" |> ignore
 
-        let rec loop () =
-            match read "user> " with
-            | null -> 0
-            | input -> 
-                //printfn "%s" (REP input)
-                try 
-                    printfn "%s" (REP env input)
-                with
-                    | ex -> 
-                        if ex.Message.Length > 0 then
-                            printfn "%s" ex.Message
-                        else
-                            ()
-                loop()
-        loop()
+        if argv.Length >= 1 then
+            let file = argv.[0]
+
+            let runFile = sprintf "(load-file \"%s\")" file
+
+            try 
+                //printfn "%s" (REP env runFile)
+                REP env runFile |> ignore
+                0
+            with
+                | ex -> 
+                    if ex.Message.Length > 0 then
+//                        printfn "%s" ex.Message
+                        0
+                    else
+                        0
+
+        else
+            let rec loop () =
+                match read "user> " with
+                | null -> 0
+                | input -> 
+                    //printfn "%s" (REP input)
+                    try 
+                        printfn "%s" (REP env input)
+                    with
+                        | ex -> 
+                            if ex.Message.Length > 0 then
+                                printfn "%s" ex.Message
+                            else
+                                ()
+                    loop()
+            loop()

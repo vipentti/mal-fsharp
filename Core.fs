@@ -22,9 +22,12 @@
         | ((List (_, xs)) | (Vector (_, xs))) :: anything -> Bool (xs.Length = 0)
         | _ -> Bool false
 
-    let count args = 
-        match args with 
-        | ((List (_, xs)) | (Vector (_, xs))) :: anything -> Number xs.Length
+    let count = function
+        | [List(_, xs) | Vector (_, xs)] ->
+            Number xs.Length
+        | [HashMap(_, xs)] -> Number xs.Count
+        | [Nil] -> Number 0
+        | [String s] -> Number s.Length
         | _ -> Number 0
 
     let equal args = 
@@ -36,7 +39,6 @@
         match values with
         | a :: b :: rest -> Bool (op a b)
         | _ -> Bool false
-
 
     let noop (args : list<MalType>) = Nil
         
