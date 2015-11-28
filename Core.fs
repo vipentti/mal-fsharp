@@ -157,6 +157,16 @@
         | [_] -> Bool false
         | _ -> raise(Exception("Invalid symbol? arguments"))
 
+    let isKeyword = function
+        | [Keyword _] -> Bool true
+        | [_] -> Bool false
+        | _ -> raise(Exception("Invalid keyword? arguments"))
+
+    let isVector = function
+        | [Vector _] -> Bool true
+        | [_] -> Bool false
+        | _ -> raise(Exception("Invalid keyword? arguments"))
+
 
     let apply = function
         | func :: rest ->
@@ -188,6 +198,11 @@
                 |> Types.List
             | _ -> raise(Exception("Invalid apply arguments"))
         | _ -> raise(Exception("Invalid apply arguments"))
+
+
+    let vector = function
+        | args ->
+            Vector args
 
 
     let throw = function
@@ -231,4 +246,14 @@
                           "map", map
 
                           "throw", throw
+
+                          "symbol", (function [String s] -> Symbol s | _ -> raise(Exception("Invalid symbol")))
+                          "keyword", (function [String s] -> Keyword s | [Keyword _ as kw] -> kw | _ -> raise(Exception("Invalid symbol")))
+
+
+                          "symbol?", isSymbol
+                          "keyword?", isKeyword
+                          "vector?", isVector
+
+                          "vector", vector
                           ]
