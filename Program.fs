@@ -112,6 +112,21 @@
 
         | _ -> raise(Exception("Invalid fn* form"))
 
+    and tryCatchForm env = function
+        | [tryBlock; catchBlock] -> 
+            match catchBlock with
+            | List [Symbol "catch*"; exc; form] ->
+                try 
+                    eval env tryBlock
+                with
+                    | ex -> 
+                        let exMal = Types.String ex.Message
+                        let exEnv = makeNewEnv env [exc] [exMal]
+                        eval exEnv form
+
+            | _ -> raise(Exception("Invalid try*/catch* form"))
+        | _ -> Nil
+
     and eval (env : EnvChain) = function
         | List _ as item -> 
             match macroexpand env item with
@@ -129,6 +144,9 @@
                     set env name macro
                     macro
                 | _ -> raise(Exception("Invalid macro form"))
+
+            
+            | List (Symbol "try*" :: rest) -> tryCatchForm env rest
 
             | List (Symbol "let*" :: rest) ->
                 let newChain, calls = letStarForm env rest
