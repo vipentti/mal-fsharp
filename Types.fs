@@ -16,6 +16,7 @@
         | HashMap of Collections.Map<MalType, MalType>
         | PrimitiveFunction of int * (list<MalType> -> MalType)
         | Function of int * (list<MalType> -> MalType) * MalType * list<MalType> * EnvChain 
+        | Macro of int * (list<MalType> -> MalType) * MalType * list<MalType> * EnvChain 
 //        | Atom of string
 
 
@@ -64,7 +65,7 @@
             | Bool(_) -> 8
             | PrimitiveFunction(_) -> 9
             | Function(_) -> 9
-//            | Macro(_, _, _, _, _, _) -> 9
+            | Macro(_) -> 9
 //            | Atom(_, _) -> 10
 
         static member private equals x y =
@@ -80,13 +81,10 @@
             | Number(a), Number(b) -> a = b
             | String(a), String(b) -> a = b
             | Bool(a), Bool(b) -> a = b
-//            | (BuiltInFunc(_, a, _) | Func(_, a, _, _, _, _) | Macro(_, a, _, _, _, _)),
-//              (BuiltInFunc(_, b, _) | Func(_, b, _, _, _, _) | Macro(_, b, _, _, _, _)) ->
-//                a = b
-//            | Atom(a, _), Atom(b, _) -> a = b
-            | (PrimitiveFunction(a, _) | Function (a, _, _, _, _)), 
-              (PrimitiveFunction(b, _) | Function (b, _, _, _, _)) -> 
+            | (PrimitiveFunction(a, _) | Function (a, _, _, _, _) | Macro (a, _, _, _, _)), 
+              (PrimitiveFunction(b, _) | Function (b, _, _, _, _) | Macro (b, _, _, _, _)) -> 
                 a = b
+//            | Atom(a, _), Atom(b, _) -> a = b
             | _, _ -> false
 
         static member private compare x y =
@@ -104,8 +102,8 @@
             | Bool(a), Bool(b) -> compare a b
 //            | PrimitiveFunction(a, _), PrimitiveFunction(b, _) -> compare a b
 
-            | (PrimitiveFunction(a, _) | Function (a, _, _, _, _)), 
-              (PrimitiveFunction(b, _) | Function (b, _, _, _, _)) -> 
+            | (PrimitiveFunction(a, _) | Function (a, _, _, _, _) | Macro(a, _, _ ,_ ,_)), 
+              (PrimitiveFunction(b, _) | Function (b, _, _, _, _) | Macro(b, _, _ ,_ ,_)) -> 
                 compare a b
 //            | Atom(a, _), Atom(b, _) -> compare a b
             | a, b -> compare (MalType.rank a) (MalType.rank b)
@@ -127,7 +125,7 @@
             | Number(num) -> hash num
             | String(str) -> hash str
             | Bool(b) -> hash b
-            | PrimitiveFunction(tag, _) | Function(tag, _, _, _, _) ->
+            | PrimitiveFunction(tag, _) | Function(tag, _, _, _, _) | Macro(tag, _, _, _, _) ->
                 hash tag
 //            | Atom(tag, _) -> hash tag
 

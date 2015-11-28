@@ -26,6 +26,8 @@
 
         | PrimitiveFunction _ -> "#<primitive_function>"
 
+        | Macro _ -> "#<macro>"
+
         | HashMap v ->
             v
             |> Map.toList

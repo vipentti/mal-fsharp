@@ -85,45 +85,120 @@
 
         | _, _ -> raise(Exception("Invalis quasiquote form"))
 
-    and eval (env : EnvChain) ast =
+    and macroexpand env ast = 
+        let is_macro_call env ast = 
+            match ast with
+            | List (Symbol name :: _) ->
+                match (find env name) with
+                | Some(Macro(_)) -> true
+                | _ -> false
+            | _ -> false
+
+//        let get_macro env ast =
+//            match ast with
+//            | List (Symbol name :: _) ->
+//                match (get env name) with
+//                | Macro(_) as v -> v
+//                | _ -> raise(Exception("Not a macro"))
+//            | _ -> raise(Exception("Not a macro"))
+//            
+        let rec loop env ast = 
+            match is_macro_call env ast, ast with 
+            | true, (List (Symbol name :: args) as item) ->
+                let macro = get env name 
+                match macro with 
+                | Macro(_, _, content, _, _) ->
+                    let nextAst = eval env content
+                    loop env nextAst
+                | _ -> raise(Exception("Not a macro."))
+//                let macro = get_macro env item
+//
+//                match macro with
+//                | Macro(_, _, body, _, _) ->
+//                | _ -> ast
+
+            | _ -> 
+                ast
+
+        //loop env ast
+        ast
+
+    and fnStarForm outer ast = 
+        
+        let func binds body = 
+            let f = 
+                fun items -> 
+                    let inner = makeNewEnv outer binds items
+                    eval inner body
+            Env.makeFunction f body binds outer
+
         match ast with
+        | [(List args) | (Vector args); body] ->
+            func args body
 
-        | List (Symbol "do" :: rest) -> doForm env rest |> eval env
+        | _ -> raise(Exception("Invalid fn* form"))
 
-        | List (Symbol "if" :: rest) -> ifForm env rest |> eval env
+    and eval (env : EnvChain) oAst =
 
-        | List [Symbol "def!"; Symbol name; form] ->
-            let evaled = eval env form
-            set env name evaled
-            evaled
+        match oAst with
+        | List _ -> 
+            let expandedAst = macroexpand env oAst
 
-        | List (Symbol "let*" :: rest) ->
-            let newChain, calls = letStarForm env rest
-            eval newChain calls
+            match expandedAst with
+            | List _ ->
+                let ast = expandedAst
+                match ast with
 
-        | List [Symbol "fn*"; (List args) | (Vector args); body] ->
-            let temp = makeFunction Core.noop body args env
-            temp
+                | List (Symbol "do" :: rest) -> doForm env rest |> eval env
 
-        | List [Symbol "quote"; rest] -> rest
+                | List (Symbol "if" :: rest) -> ifForm env rest |> eval env
 
-        | List [Symbol "quasiquote"; rest] -> 
-            let newAst = quasiquote rest
-            eval env newAst
-            
-        | List (func :: args) as item-> 
-            let values = evalAst env item
-            match values with 
-            | List (func :: args) ->
-                match func with
-                | PrimitiveFunction(_, f) -> f args
-                | Function(_, _, body, binds, outer) ->
-                    let newEnv = makeNewEnv outer binds args
-                    body |> eval newEnv
-                | _ -> raise(Exception("Invalid function"))
-            | _ -> raise(Exception("Invalid form"))
+                | List [Symbol "def!"; Symbol name; form] ->
+                    let evaled = eval env form
+                    set env name evaled
+                    evaled
 
-        | _ -> evalAst env ast
+                | List [Symbol "defmacro!"; Symbol name; form] ->
+                    let evaled = eval env form
+                    let macro = Env.makeMacro Core.noop evaled [] env
+                    set env name macro
+                    macro
+
+                | List (Symbol "let*" :: rest) ->
+                    let newChain, calls = letStarForm env rest
+                    eval newChain calls
+
+                | List (Symbol "fn*" :: rest) -> fnStarForm env rest
+
+                | List [Symbol "quote"; rest] -> rest
+
+                | List [Symbol "quasiquote"; rest] -> quasiquote rest |> eval env 
+
+                | List [Symbol "macroexpand"; args] -> macroexpand env args
+                    
+                | List (func :: args) as item-> 
+                    let values = evalAst env item
+                    match values with 
+                    | List (func :: args) ->
+                        match func with
+                        | PrimitiveFunction(_, f) -> f args
+                        | Function(_, f, body, binds, outer) ->
+                            f args
+
+    //                        let newEnv = makeNewEnv outer binds args
+    //                        body |> eval newEnv
+
+                        | Macro(_, _, body, binds, outer) ->
+                            let newEnv = makeNewEnv outer binds args
+                            body |> eval newEnv
+
+                        | _ -> raise(Exception("Invalid function"))
+                    | _ -> raise(Exception("Invalid form"))
+
+                | _ -> evalAst env ast
+
+            | _ -> expandedAst
+        | _ -> evalAst env oAst
 
     and READ str =
         Reader.ReadStr str

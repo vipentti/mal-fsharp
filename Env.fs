@@ -51,6 +51,9 @@
     let makeFunction f body binds env = 
         Function(getNextValue(), f, body, binds, env)
 
+    let makeMacro f body binds env = 
+        Macro(getNextValue(), f, body, binds, env)
+
     let makeRootEnv () = 
         let env = makeEmptyEnv()
         let result = [env]
