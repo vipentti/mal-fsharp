@@ -61,8 +61,18 @@
         | (List vs) | (Vector vs) -> vs.Length > 0
         | _ -> false
 
+
+    //NOTE(ville): Do we actually need this ?
+    and convertVectorToList args = 
+        match args with
+        | Vector vs -> 
+            vs
+            |> List.map convertVectorToList
+            |> Types.List
+        | _ -> args
+
     and quasiquote ast = 
-        match (isNonEmpty ast), ast with
+        match (isNonEmpty ast), (convertVectorToList ast) with
         | false, _ -> List ((Symbol "quote") :: [ast])
         | _, List [Symbol "unquote"; rest] -> rest
 

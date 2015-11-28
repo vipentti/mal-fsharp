@@ -95,16 +95,16 @@
 
     let cons args = 
         match args with
-        | value :: [List items] -> List (value :: items)
+        | value :: ([List items] | [Vector items]) -> List (value :: items)
         | _ -> raise(Exception("Invalid cons arguments"))
 
     let concat args = 
         match args with
         | []-> List []
-        | List vs :: rest ->
+        | (List vs :: rest) | (Vector vs :: rest) ->
             let result = 
                 args
-                |> List.map (function | List xs -> xs | _ -> [])
+                |> List.map (function | (List xs | Vector xs) -> xs | _ -> [])
                 |> List.filter (fun x -> x.Length > 0)
                 |> List.concat
 
