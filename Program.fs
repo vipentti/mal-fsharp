@@ -5,8 +5,6 @@
 
     open Env
 
-    let initialEnv = makeRootEnv ()
-
     let rec evalAst (env : EnvChain) ast = 
         match ast with
         | Symbol v -> get env v
@@ -100,21 +98,46 @@
     and EVAL (env : EnvChain) ast =
         eval env ast
 
-    and REP str =
+    and REP env str =
         str 
         |> READ 
-        |> (EVAL initialEnv) 
+        |> (EVAL env) 
         |> PRINT true
 
     let read (prompt :string) = 
         Console.Write(prompt)
         Console.Out.Flush()
         Console.ReadLine()
+
+
+    let evalFunction env args =
+        match args with
+        | [item] -> eval env item
+        | _ -> raise(Exception("Invalid eval form"))
     
     [<EntryPoint>]
     let main argv = 
 
-        ignore (REP "(def! not (fn* (a) (if a false true)))")
+        let env = makeRootEnv ()
+
+        set env "eval" (makePrimitiveFunction(evalFunction env))
+
+        let malArgs =
+            let tempArgs = 
+                if argv.Length = 0 then
+                    [||]
+                else
+                    argv.[1..]
+            tempArgs
+            |> Array.map Types.String
+            |> Array.toList
+            |> Types.List
+
+        set env "*ARGV*" malArgs
+
+
+        REP env "(def! not (fn* (a) (if a false true)))" |> ignore
+        REP env "(def! load-file (fn* (f) (eval (read-string (str \"(do \" (slurp f) \")\")))))" |> ignore
 
         let rec loop () =
             match read "user> " with
@@ -122,7 +145,7 @@
             | input -> 
                 //printfn "%s" (REP input)
                 try 
-                    printfn "%s" (REP input)
+                    printfn "%s" (REP env input)
                 with
                     | ex -> printfn "%s" ex.Message
                 loop()

@@ -55,27 +55,7 @@
         let env = makeEmptyEnv()
         let result = [env]
         let replEnv = 
-            [
-                "+", singleMathOp (+);
-                "-", singleMathOp (-);
-                "*", singleMathOp (*);
-                "/", singleMathOp (fun x y -> int(x/y));
-
-                "list", List;
-                "list?", isList;
-                "empty?", isEmpty;
-                "count", count;
-                "=", boolBinop (=);
-                ">", boolBinop (>);
-                ">=", boolBinop (>=);
-                "<", boolBinop (<);
-                "<=", boolBinop (<=);
-
-                "pr-str", prstr;
-                "str", str;
-                "prn", prn;
-                "println", println;
-            ] 
+            Core.coreFunctions
             |> List.iter (fun (x, y) -> set result x (makePrimitiveFunction y))
 
         result

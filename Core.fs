@@ -78,3 +78,38 @@
         //NOTE(ville): This is a bit of a hack
         Console.Write(str + "\n")
         Nil
+
+    let readString args = 
+        match args with
+        | [String s] -> Reader.ReadStr s
+        | _ -> raise(Exception("Invalid string type"))
+
+
+    let slurp args = 
+        match args with
+        | [String fileName] -> 
+            let text = System.IO.File.ReadAllText(fileName)
+            Types.String text
+        | _ -> raise(Exception("Invalid filename"))
+
+
+    let coreFunctions = [ "+", singleMathOp (+)
+                          "-", singleMathOp (-)
+                          "*", singleMathOp (*)
+                          "/", singleMathOp (fun x y -> int (x / y))
+                          "list", List
+                          "list?", isList
+                          "empty?", isEmpty
+                          "count", count
+                          "=", boolBinop (=)
+                          ">", boolBinop (>)
+                          ">=", boolBinop (>=)
+                          "<", boolBinop (<)
+                          "<=", boolBinop (<=)
+                          "pr-str", prstr
+                          "str", str
+                          "prn", prn
+                          "println", println 
+                          "read-string", readString
+                          "slurp", slurp
+                          ]
