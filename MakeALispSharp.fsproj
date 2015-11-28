@@ -75,9 +75,13 @@
   </Choose>
   <Import Project="$(FSharpTargetsPath)" />
   <PropertyGroup>
-    <PostBuildEvent>CALL $(ProjectDir)build.bat step4_if_fn_do.exe $(TargetPath) $(TargetFileName) D:\Projects\mal\vsharp
-CALL $(ProjectDir)build.bat step5_tco.exe $(TargetPath) $(TargetFileName) D:\Projects\mal\vsharp
-CALL $(ProjectDir)build.bat step6_file.exe $(TargetPath) $(TargetFileName) D:\Projects\mal\vsharp</PostBuildEvent>
+    <PostBuildEvent>
+    </PostBuildEvent>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PostBuildEvent>pushd $(ProjectDir)
+CALL build_all.bat $(TargetPath) $(TargetFileName)
+popd</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
