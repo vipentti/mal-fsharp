@@ -136,6 +136,60 @@
             | _  -> List (List.tail vs)
         | _ -> Nil
 
+
+    let isNil = function
+        | [Nil] -> Bool true
+        | [_] -> Bool false
+        | _ -> raise(Exception("Invalid nil? arguments"))
+
+    let isTrue = function
+        | [Bool true] -> Bool true
+        | [_] -> Bool false
+        | _ -> raise(Exception("Invalid true? arguments"))
+
+    let isFalse = function
+        | [Bool false] -> Bool true
+        | [_] -> Bool false
+        | _ -> raise(Exception("Invalid false? arguments"))
+
+    let isSymbol = function
+        | [Symbol _] -> Bool true
+        | [_] -> Bool false
+        | _ -> raise(Exception("Invalid symbol? arguments"))
+
+
+    let apply = function
+        | func :: rest ->
+            let variableArgs = 
+                rest
+                |> List.rev
+                |> List.tail
+                |> List.rev
+
+            let finalArg = 
+                rest 
+                |> List.rev
+                |> List.head
+            
+            match func, finalArg with
+            | (PrimitiveFunction(_, f) | Function(_, f, _, _, _)), 
+              (List vs | Vector vs) -> 
+                f (variableArgs @ vs)
+            | _ -> raise(Exception("Invalid apply arguments"))
+        | _ -> raise(Exception("Invalid apply arguments"))
+
+    
+    let map = function
+        | func :: [List vs | Vector vs] ->
+            match func with
+            | (PrimitiveFunction(_, f) | Function(_, f, _, _, _)) ->
+                vs
+                |> List.map (fun x -> f [x])
+                |> Types.List
+            | _ -> raise(Exception("Invalid apply arguments"))
+        | _ -> raise(Exception("Invalid apply arguments"))
+
+
     let coreFunctions = [ "+", singleMathOp (+)
                           "-", singleMathOp (-)
                           "*", singleMathOp (*)
@@ -162,4 +216,13 @@
                           "nth", nth
                           "first", first
                           "rest", rest
+
+                          "nil?", isNil
+                          "true?", isTrue
+                          "false?", isFalse
+                          "symbol?", isSymbol
+
+                          "apply", apply
+
+                          "map", map
                           ]

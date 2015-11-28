@@ -15,7 +15,7 @@ set step8=step8_macros
 set step9=step9_try
 set stepA=stepA_mal
 
-set ENABLED_STEPS=%step1% %step2% %step3% %step4% %step5% %step6% %step7% %step8%
+set ENABLED_STEPS=%step1% %step2% %step3% %step4% %step5% %step6% %step7% %step8% %step9% %stepA%
 
 (for %%a in (%ENABLED_STEPS%) do (
    echo Step:  %%a
