@@ -23,13 +23,12 @@
 
     let isEmpty args = 
         match args with 
-        | List xs :: anything -> Bool (xs.Length = 0)
+        | ((List xs) | (Vector xs)) :: anything -> Bool (xs.Length = 0)
         | _ -> Bool false
-
 
     let count args = 
         match args with 
-        | List xs :: anything -> Number xs.Length
+        | ((List xs) | (Vector xs)) :: anything -> Number xs.Length
         | _ -> Number 0
 
     let equal args = 
@@ -58,15 +57,24 @@
         |> Types.String
 
     let prn args = 
-        args
-        |> List.map (Printer.PrStr true)
-        |> String.concat " "
-        |> printfn "%s"
+        let str = 
+            args
+            |> List.map (Printer.PrStr true)
+            |> String.concat " "
+
+        //printfn "%s" (str.Replace("\r\r\n", "\r\n"))
+        //printfn "%s" (str)
+
+        //NOTE(ville): This is a bit of a hack
+        Console.Write(str + "\n")
         Nil
 
     let println args = 
-        args
-        |> List.map (Printer.PrStr false)
-        |> String.concat " "
-        |> printfn "%s"
+        let str = 
+            args
+            |> List.map (Printer.PrStr false)
+            |> String.concat " "
+
+        //NOTE(ville): This is a bit of a hack
+        Console.Write(str + "\n")
         Nil

@@ -32,7 +32,3 @@
             |> List.map (fun (key, value) -> (PrStr readably key) + " " + (PrStr readably value))
             |> String.concat " "
             |> (fun x -> "{" + x + "}")
-
-        | _ -> "<not supported>"
-
-

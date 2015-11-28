@@ -55,15 +55,15 @@
             match x with
             | Nil -> 0
             | List(_) -> 1
-            | Vector( _) -> 2
+            | Vector(_) -> 2
             | HashMap( _) -> 3
             | Symbol(_) -> 4
             | Keyword(_) -> 5
             | Number(_) -> 6
             | String(_) -> 7
             | Bool(_) -> 8
-            | PrimitiveFunction(_, _) -> 9
-//            | Func(_, _, _, _, _, _)
+            | PrimitiveFunction(_) -> 9
+            | Function(_) -> 9
 //            | Macro(_, _, _, _, _, _) -> 9
 //            | Atom(_, _) -> 10
 

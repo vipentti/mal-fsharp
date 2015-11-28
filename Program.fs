@@ -106,24 +106,42 @@
     and REP str =
         str |> READ |> (fun x -> EVAL x initialEnv) |> PRINT true
 
+
+    let read (prompt :string) = 
+        Console.Write(prompt)
+        Console.Out.Flush()
+        Console.ReadLine()
+    
     [<EntryPoint>]
-    let main argv = 
-        //printfn "%A" argv
-
-        let mutable running = true
-
-        while running do
-            Console.Write("user> ")
-            let line = Console.ReadLine()
-
-            if line = null || line = "quit" then
-                running <- false
-            else
-                //Console.WriteLine(REP line)
-                try 
-                    let result = REP line
-                    Console.WriteLine(result)
-                with
-                    | ex -> printfn "%s" ex.Message
-
-        0 // return an integer exit code
+    let rec main argv = 
+        match read "user> " with
+        | null -> 0
+        | input -> 
+            try 
+                printfn "%s" (REP input)
+            with
+                | ex -> printfn "%s" ex.Message
+            main argv
+//    [<EntryPoint>]
+//    let main argv = 
+//        //printfn "%A" argv
+//
+//        let mutable running = true
+//
+//        ignore (REP "(def! not (fn* (a) (if a false true)))")
+//
+//        while running do
+//            Console.Write("user> ")
+//            let line = Console.ReadLine()
+//
+//            if line = null || line = "quit" then
+//                running <- false
+//            else
+//                //Console.WriteLine(REP line)
+//                try 
+//                    let result = REP line
+//                    Console.WriteLine(result)
+//                with
+//                    | ex -> printfn "%s" ex.Message
+//
+//        0 // return an integer exit code
