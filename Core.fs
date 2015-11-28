@@ -111,6 +111,28 @@
             List result
         | _ -> raise(Exception("Invalid concat arguments"))
 
+    
+    let nth = function
+        | [] -> Nil
+        | ((List vs) | (Vector vs)) :: [Number n] -> 
+            if n > vs.Length - 1 || n < 0 then
+                raise(Exception("Index out of range " + n.ToString()))
+            else
+                vs.Item n
+
+        | _ -> raise(Exception("Invalid nth arguments"))
+
+    let first = function
+        | [(List vs) | (Vector vs)]-> 
+            match vs with
+            | [] -> Nil
+            | _  -> List.head vs
+        | _ -> Nil
+
+    let rest = function
+        | [(List vs) | (Vector vs)] -> List (List.tail vs)
+        | _ -> Nil
+
     let coreFunctions = [ "+", singleMathOp (+)
                           "-", singleMathOp (-)
                           "*", singleMathOp (*)
@@ -133,4 +155,8 @@
 
                           "cons", cons
                           "concat", concat
+
+                          "nth", nth
+                          "first", first
+                          "rest", rest
                           ]
