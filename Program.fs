@@ -55,6 +55,26 @@
             
         | _ -> raise(Exception("Invalid form"))
 
+
+    and isNonEmpty args = 
+        match args with 
+        | (List vs) | (Vector vs) -> vs.Length > 0
+        | _ -> false
+
+    and quasiquote ast = 
+        match (isNonEmpty ast), ast with
+        | false, _ -> List ((Symbol "quote") :: [ast])
+        | _, List [Symbol "unquote"; rest] -> rest
+
+        | true, List (List (Symbol "splice-unquote" :: spliceArgs) :: restArgs) ->
+            let restQuasi = quasiquote (List restArgs)
+            List ([Symbol "concat"] @ spliceArgs @ [restQuasi])
+
+        | _, List (xs :: rest) -> 
+            List ([Symbol "cons"] @ [quasiquote xs] @ [quasiquote (List rest)])
+
+        | _, _ -> raise(Exception("Invalis quasiquote form"))
+
     and eval (env : EnvChain) ast =
         match ast with
 
@@ -74,6 +94,12 @@
         | List [Symbol "fn*"; (List args) | (Vector args); body] ->
             let temp = makeFunction Core.noop body args env
             temp
+
+        | List [Symbol "quote"; rest] -> rest
+
+        | List [Symbol "quasiquote"; rest] -> 
+            let newAst = quasiquote rest
+            eval env newAst
             
         | List (func :: args) as item-> 
             let values = evalAst env item
