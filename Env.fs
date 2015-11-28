@@ -34,6 +34,9 @@
 
         let rec loop binds exprs = 
             match binds, exprs with
+            | Symbol "&" :: [Symbol name], ns ->
+                set newChain name (List ns)
+                newChain
             | Symbol s :: symbs, n :: ns ->
                 set newChain s n
                 loop symbs ns

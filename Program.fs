@@ -107,6 +107,8 @@
         str |> READ |> (fun x -> EVAL x initialEnv) |> PRINT true
 
 
+    ignore (REP "(def! not (fn* (a) (if a false true)))")
+
     let read (prompt :string) = 
         Console.Write(prompt)
         Console.Out.Flush()
@@ -128,7 +130,6 @@
 //
 //        let mutable running = true
 //
-//        ignore (REP "(def! not (fn* (a) (if a false true)))")
 //
 //        while running do
 //            Console.Write("user> ")
