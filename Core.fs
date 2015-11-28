@@ -93,6 +93,24 @@
         | _ -> raise(Exception("Invalid filename"))
 
 
+    let cons args = 
+        match args with
+        | value :: [List items] -> List (value :: items)
+        | _ -> raise(Exception("Invalid cons arguments"))
+
+    let concat args = 
+        match args with
+        | []-> List []
+        | List vs :: rest ->
+            let result = 
+                args
+                |> List.map (function | List xs -> xs | _ -> [])
+                |> List.filter (fun x -> x.Length > 0)
+                |> List.concat
+
+            List result
+        | _ -> raise(Exception("Invalid concat arguments"))
+
     let coreFunctions = [ "+", singleMathOp (+)
                           "-", singleMathOp (-)
                           "*", singleMathOp (*)
@@ -112,4 +130,7 @@
                           "println", println 
                           "read-string", readString
                           "slurp", slurp
+
+                          "cons", cons
+                          "concat", concat
                           ]
