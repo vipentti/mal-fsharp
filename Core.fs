@@ -174,8 +174,8 @@
             | PrimitiveFunction(_, _, f) 
             | Function(_, _, f, _, _, _) ->
                 match finalArg with
-                | (List (_, []) | Vector (_, [])) -> 
-                    f (variableArgs @ [makeList []])
+//                | (List (_, []) | Vector (_, [])) -> 
+//                    f (variableArgs @ [makeList []])
 
                 | (List (_, vs) | Vector (_, vs)) -> 
                     f (variableArgs @ vs)

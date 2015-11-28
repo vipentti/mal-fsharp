@@ -199,6 +199,13 @@
         | [item] -> eval env item
         | _ -> raise(Exception("Invalid eval form"))
     
+
+
+    let getArgs = function
+        | file::rest -> rest |> List.map Types.String |> makeList
+        | [] -> makeList []
+        
+
     [<EntryPoint>]
     let main argv = 
 
@@ -206,18 +213,18 @@
 
         set env "eval" (makePrimitiveFunction(evalFunction env))
 
-        let malArgs =
-            let tempArgs = 
-                if argv.Length = 0 then
-                    [||]
-                else
-                    argv.[1..]
-            tempArgs
-            |> Array.map Types.String
-            |> Array.toList
-            |> makeList
+//        let malArgs =
+//            let tempArgs = 
+//                if argv.Length = 0 then
+//                    [||]
+//                else
+//                    argv.[1..]
+//            tempArgs
+//            |> Array.map Types.String
+//            |> Array.toList
+//            |> makeList
 
-        set env "*ARGV*" malArgs
+        set env "*ARGV*" (getArgs (List.ofArray argv))
         set env "*host-language*" (String("F-Sharp"))
 
         REP env "(def! not (fn* (a) (if a false true)))" |> ignore
@@ -227,20 +234,22 @@
 
         if argv.Length >= 1 then
             let file = argv.[0]
-
             let runFile = sprintf "(load-file \"%s\")" file
 
-            try 
+//            try 
                 //printfn "%s" (REP env runFile)
-                REP env runFile |> ignore
-                0
-            with
-                | ex -> 
-                    if ex.Message.Length > 0 then
-//                        printfn "%s" ex.Message
-                        0
-                    else
-                        0
+//            System.IO.File.ReadAllText file
+//            |> REP env 
+            REP env runFile
+            |> printfn "%s"
+            0
+//            with
+//                | ex -> 
+//                    if ex.Message.Length > 0 then
+////                        printfn "%s" ex.Message
+//                        0
+//                    else
+//                        0
 
         else
             let rec loop () =
