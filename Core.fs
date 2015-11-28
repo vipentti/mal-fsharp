@@ -190,6 +190,10 @@
         | _ -> raise(Exception("Invalid apply arguments"))
 
 
+    let throw = function
+        | [value] -> raise <| MalException value
+        | _ -> raise(Exception("Invalid throw arguments"))
+
     let coreFunctions = [ "+", singleMathOp (+)
                           "-", singleMathOp (-)
                           "*", singleMathOp (*)
@@ -225,4 +229,6 @@
                           "apply", apply
 
                           "map", map
+
+                          "throw", throw
                           ]

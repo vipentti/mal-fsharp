@@ -119,6 +119,10 @@
                 try 
                     eval env tryBlock
                 with
+                    | MalException v as ex -> 
+                        let exMal =  v
+                        let exEnv = makeNewEnv env [exc] [exMal]
+                        eval exEnv form
                     | ex -> 
                         let exMal = Types.String ex.Message
                         let exEnv = makeNewEnv env [exc] [exMal]

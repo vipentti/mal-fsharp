@@ -138,3 +138,5 @@
 
     and Env = System.Collections.Generic.Dictionary<string, MalType>
     and EnvChain = Env list
+
+    exception MalException of MalType
