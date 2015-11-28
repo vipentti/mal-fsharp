@@ -144,3 +144,12 @@
     let makeList s = List(Nil, s)
     let makeVector s = Vector(Nil, s)
 
+
+    let setMeta meta = function
+        | HashMap (_, x) -> HashMap(meta, x)
+        | List (_, x) -> List(meta, x)
+        | Vector (_, x) -> Vector(meta, x)
+        | PrimitiveFunction (_, x, y) -> PrimitiveFunction(meta, x, y)
+        | Function (_, a, b, c, d, e) -> Function(meta, a, b, c, d, e)
+        | Macro (_, a, b, c, d, e) -> Macro(meta, a, b, c, d, e)
+        | _ -> Nil

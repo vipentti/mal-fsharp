@@ -243,6 +243,24 @@
         | [value] -> raise <| MalException value
         | _ -> raise(Exception("Invalid throw arguments"))
 
+
+    let meta = function
+        | [func] -> 
+            match func with 
+            | List (m, _)
+            | Vector (m, _)
+            | HashMap (m, _)
+            | PrimitiveFunction(m, _, _) 
+            | Function(m, _, _, _, _, _)
+            | Macro(m, _, _, _, _, _) -> 
+                m
+            | _ -> Nil
+        | _ -> raise(Exception("Invalid arguments"))
+
+    let withMeta = function
+        | [obj; meta] -> setMeta meta obj
+        | _ -> raise(Exception("Invalid arguments"))
+
     let coreFunctions = [ "+", singleMathOp (+)
                           "-", singleMathOp (-)
                           "*", singleMathOp (*)
@@ -302,4 +320,7 @@
                           "keys", keys
                           "vals", vals
                           "sequential?", sequential
+
+                          "meta", meta
+                          "with-meta", withMeta
                           ]

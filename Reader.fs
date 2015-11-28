@@ -103,7 +103,7 @@
         | "(" -> ReadList reader
         | "[" -> ReadVector reader
         | "{" -> ReadHashMap reader
-        | "'" | "`" | "~" | "~@" -> ReadMacro reader
+        | "'" | "`" | "~" | "~@" | "^" | "@" -> ReadMacro reader
         | _   -> ReadAtom reader
 
 
@@ -115,6 +115,10 @@
         | "`" -> makeList ((Symbol "quasiquote") :: [ReadForm reader])
         | "~" -> makeList ((Symbol "unquote") :: [ReadForm reader])
         | "~@" -> makeList ((Symbol "splice-unquote") :: [ReadForm reader])
+        | "^" -> 
+            let meta = ReadForm reader
+            makeList ((Symbol "with-meta") :: ReadForm reader :: [meta])
+        | "@" -> makeList ((Symbol "deref") :: [ReadForm reader])
         | _ -> Nil
         
 
