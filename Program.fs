@@ -5,8 +5,7 @@
 
     open Env
 
-    let rec evalAst (env : EnvChain) ast = 
-        match ast with
+    let rec evalAst (env : EnvChain) =  function
         | Symbol v -> get env v
         | List vs -> vs |> List.map (eval env) |> List
         | Vector vs -> vs |> List.map (eval env) |> Vector
@@ -14,7 +13,7 @@
             map
             |> Map.map (fun key value -> eval env value)
             |> HashMap
-        | _ -> ast
+        | item -> item
 
     and ifForm env args = 
 
@@ -86,34 +85,17 @@
         | _, _ -> raise(Exception("Invalis quasiquote form"))
 
     and macroexpand env ast = 
-        let is_macro_call env ast = 
-            match ast with
-            | List (Symbol name :: _) ->
+        let get_macro_call env = function 
+            | List (Symbol name :: rest) ->
                 match (find env name) with
-                | Some(Macro(_)) -> true
-                | _ -> false
-            | _ -> false
+                | Some(Macro(_)) as m -> m, rest
+                | _ -> None, []
+            | _ -> None, []
 
-        let rec loop env ast = 
-            match is_macro_call env ast, ast with 
-            | true, (List (Symbol name :: args) as item) ->
-                let macro = get env name 
-                match macro with 
-                | Macro(_, _, content, _, _) ->
-                    let nextAst = eval env content
-                    loop env nextAst
-                | _ -> raise(Exception("Not a macro."))
-//                let macro = get_macro env item
-//
-//                match macro with
-//                | Macro(_, _, body, _, _) ->
-//                | _ -> ast
-
-            | _ -> 
-                ast
-
-        //loop env ast
-        ast
+        match get_macro_call env ast with
+        | Some(Macro(_, f, _, _, _)), rest -> 
+            f rest |> macroexpand env
+        | _, _ -> ast 
 
     and fnStarForm outer ast = 
         
