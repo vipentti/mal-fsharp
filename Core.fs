@@ -6,6 +6,7 @@
         match value with 
         | Number x -> x
         | List (_, [n]) -> unpackNumber n
+        | Vector (_, [n]) -> unpackNumber n
         | String x -> int(float(x))
         | _        -> raise (Exception("Typemismatch"))
 
@@ -154,7 +155,6 @@
     let isVector = isOfPattern (function Vector _ -> true | _ -> false)
     let isMap = isOfPattern (function HashMap _ -> true | _ -> false)
 
-
     let apply = function
         | func :: rest ->
             let variableArgs = 
@@ -172,17 +172,19 @@
             | PrimitiveFunction(_, _, f) 
             | Function(_, _, f, _, _, _) ->
                 match finalArg with
+                | (List (_, []) | Vector (_, [])) -> 
+                    f (variableArgs @ [makeList []])
+
                 | (List (_, vs) | Vector (_, vs)) -> 
                     f (variableArgs @ vs)
                 
                 | _ -> f (variableArgs @ [finalArg])
+//                let totalArgs = 
+//                    (variableArgs @ [finalArg])
+//                    |> List.flatten
+//                f (variableArgs @ [finalArg])
 
             | _ -> raise(Exception("Invalid apply arguments"))
-//            match func, finalArg with
-//            | (PrimitiveFunction(_, _, f) | Function(_, _, f, _, _, _)), 
-//              (List (_, vs) | Vector (_, vs)) -> 
-//                f (variableArgs @ vs)
-//            | _ -> raise(Exception("Invalid apply arguments"))
         | _ -> raise(Exception("Invalid apply arguments"))
 
     
@@ -296,11 +298,12 @@
         | _ -> raise(Exception("Invalid arguments"))
 
     let swap = function
-        | (Atom (_, arg)) :: func :: args ->
-            let value = !arg
-            let result = apply (func :: value :: args)
-            arg := result
-            result
+        | Atom (_, arg)
+            ::(PrimitiveFunction(_, _, f) | Function(_, _, f, _, _, _))
+            ::args ->
+                let result = f (!arg :: args)
+                arg := result
+                !arg
         | _ -> raise(Exception("Invalid arguments"))
 
     let coreFunctions = [ "+", singleMathOp (+)
