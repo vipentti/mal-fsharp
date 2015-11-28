@@ -2,7 +2,6 @@
     
     open Types
     open System
-    open Core
 
     let makeEmptyEnv () = Env ()
 
@@ -45,6 +44,8 @@
 
         loop binds exprs
 
+    let makeAtom f = Atom(getNextValue(), ref f)
+
     let makePrimitiveFunction f = 
         PrimitiveFunction(Nil, getNextValue(), f)
 
@@ -54,11 +55,11 @@
     let makeMacro f body binds env = 
         Macro(Nil, getNextValue(), f, body, binds, env)
 
-    let makeRootEnv () = 
+    let makeRootEnv functions = 
         let env = makeEmptyEnv()
         let result = [env]
         let replEnv = 
-            Core.coreFunctions
+            functions
             |> List.iter (fun (x, y) -> set result x (makePrimitiveFunction y))
 
         result

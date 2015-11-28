@@ -202,7 +202,7 @@
     [<EntryPoint>]
     let main argv = 
 
-        let env = makeRootEnv ()
+        let env = makeRootEnv Core.coreFunctions
 
         set env "eval" (makePrimitiveFunction(evalFunction env))
 

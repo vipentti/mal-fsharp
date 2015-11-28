@@ -168,11 +168,21 @@
                 |> List.rev
                 |> List.head
             
-            match func, finalArg with
-            | (PrimitiveFunction(_, _, f) | Function(_, _, f, _, _, _)), 
-              (List (_, vs) | Vector (_, vs)) -> 
-                f (variableArgs @ vs)
+            match func with
+            | PrimitiveFunction(_, _, f) 
+            | Function(_, _, f, _, _, _) ->
+                match finalArg with
+                | (List (_, vs) | Vector (_, vs)) -> 
+                    f (variableArgs @ vs)
+                
+                | _ -> f (variableArgs @ [finalArg])
+
             | _ -> raise(Exception("Invalid apply arguments"))
+//            match func, finalArg with
+//            | (PrimitiveFunction(_, _, f) | Function(_, _, f, _, _, _)), 
+//              (List (_, vs) | Vector (_, vs)) -> 
+//                f (variableArgs @ vs)
+//            | _ -> raise(Exception("Invalid apply arguments"))
         | _ -> raise(Exception("Invalid apply arguments"))
 
     
@@ -269,6 +279,30 @@
         | [obj; meta] -> setMeta meta obj
         | _ -> raise(Exception("Invalid arguments"))
 
+    let isAtom = isOfPattern(function Atom _ -> true | _ -> false)
+
+    let atom = function
+        | [arg] -> Env.makeAtom arg
+        | _ -> raise(Exception("Invalid arguments"))
+
+    let deref = function
+        | [Atom (_, arg)] -> !arg
+        | _ -> raise(Exception("Invalid arguments"))
+
+    let reset = function
+        | [Atom (_, arg) as atm; value] -> 
+            arg := value
+            value
+        | _ -> raise(Exception("Invalid arguments"))
+
+    let swap = function
+        | (Atom (_, arg)) :: func :: args ->
+            let value = !arg
+            let result = apply (func :: value :: args)
+            arg := result
+            result
+        | _ -> raise(Exception("Invalid arguments"))
+
     let coreFunctions = [ "+", singleMathOp (+)
                           "-", singleMathOp (-)
                           "*", singleMathOp (*)
@@ -332,4 +366,11 @@
 
                           "meta", meta
                           "with-meta", withMeta
+
+                          "atom", atom
+                          "atom?", isAtom
+
+                          "deref", deref
+                          "reset!", reset
+                          "swap!", swap
                           ]

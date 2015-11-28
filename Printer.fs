@@ -35,4 +35,6 @@
             |> String.concat " "
             |> (fun x -> "{" + x + "}")
 
-        | Atom (_, v) -> "#<atom>"
+        | Atom (_, v) -> 
+            let value = !v
+            sprintf "(atom %s)" (PrStr true value)
