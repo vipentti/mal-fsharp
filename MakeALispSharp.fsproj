@@ -75,7 +75,7 @@
   <PropertyGroup>
     <PostBuildEvent>copy $(TargetPath) D:\Projects\mal\vsharp\
 pushd D:\Projects\mal\vsharp
-move /Y $(TargetFileName) step4_if_fn_do.exe
+move /Y $(TargetFileName) step5_tco.exe
 popd</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

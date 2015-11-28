@@ -89,14 +89,6 @@
             | List (func :: rest) ->
                 apply func rest
             | _ -> raise(Exception("Invalid form"))
-//            let funcEval = evalAst func env
-//            let rest = evalAst (List args) env
-//            let funcEval = List.head values
-//            let rest = List.tail values
-//
-//            match rest with
-//            | List vs -> apply funcEval vs
-//            | x -> apply funcEval [x]
 
         | _ -> evalAst ast env
 
@@ -106,24 +98,26 @@
     and REP str =
         str |> READ |> (fun x -> EVAL x initialEnv) |> PRINT true
 
-
-    ignore (REP "(def! not (fn* (a) (if a false true)))")
-
     let read (prompt :string) = 
         Console.Write(prompt)
         Console.Out.Flush()
         Console.ReadLine()
     
     [<EntryPoint>]
-    let rec main argv = 
-        match read "user> " with
-        | null -> 0
-        | input -> 
-            try 
-                printfn "%s" (REP input)
-            with
-                | ex -> printfn "%s" ex.Message
-            main argv
+    let main argv = 
+
+        ignore (REP "(def! not (fn* (a) (if a false true)))")
+
+        let rec loop () =
+            match read "user> " with
+            | null -> 0
+            | input -> 
+                try 
+                    printfn "%s" (REP input)
+                with
+                    | ex -> printfn "%s" ex.Message
+                loop()
+        loop()
 //    [<EntryPoint>]
 //    let main argv = 
 //        //printfn "%A" argv
