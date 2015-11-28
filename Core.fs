@@ -93,6 +93,14 @@
         | value :: ([List (m, items)] | [Vector (m, items)]) -> List (m, value :: items)
         | _ -> raise(Exception("Invalid cons arguments"))
 
+
+    let conj = function
+        | (Vector (_, vs)) :: args -> 
+            makeVector (vs @ args)
+        | (List (_, vs)) :: args -> 
+            makeList ((List.rev args) @ vs)
+        | _ -> raise(Exception("Invalid conj arguments"))
+
     let concat args = 
         match args with
         | []-> List (Nil, [])
@@ -282,6 +290,7 @@
                           "slurp", slurp
 
                           "cons", cons
+                          "conj", conj
                           "concat", concat
 
                           "nth", nth
