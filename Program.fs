@@ -147,6 +147,10 @@
                 try 
                     printfn "%s" (REP env input)
                 with
-                    | ex -> printfn "%s" ex.Message
+                    | ex -> 
+                        if ex.Message.Length > 0 then
+                            printfn "%s" ex.Message
+                        else
+                            ()
                 loop()
         loop()

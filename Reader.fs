@@ -31,7 +31,10 @@
         let (matches, error) = EnsureMatch reader
 
         if matches then
-            ReadForm reader
+            if reader.Tokens.Length = 0 then
+                raise (ParseError(""))
+            else
+                ReadForm reader
         else
             raise (ParseError(error))
         
