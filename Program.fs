@@ -218,6 +218,7 @@
             |> makeList
 
         set env "*ARGV*" malArgs
+        set env "*host-language*" (String("F-Sharp"))
 
 
         REP env "(def! not (fn* (a) (if a false true)))" |> ignore

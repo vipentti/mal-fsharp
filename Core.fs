@@ -179,11 +179,6 @@
                     f (variableArgs @ vs)
                 
                 | _ -> f (variableArgs @ [finalArg])
-//                let totalArgs = 
-//                    (variableArgs @ [finalArg])
-//                    |> List.flatten
-//                f (variableArgs @ [finalArg])
-
             | _ -> raise(Exception("Invalid apply arguments"))
         | _ -> raise(Exception("Invalid apply arguments"))
 
@@ -306,6 +301,15 @@
                 !arg
         | _ -> raise(Exception("Invalid arguments"))
 
+
+    let readline = function
+        | [String prompt] -> 
+            Console.Write(prompt)
+            Console.Out.Flush()
+            Types.String (Console.ReadLine())
+        | _ -> 
+            Types.String (Console.ReadLine())
+    
     let coreFunctions = [ "+", singleMathOp (+)
                           "-", singleMathOp (-)
                           "*", singleMathOp (*)
@@ -376,4 +380,6 @@
                           "deref", deref
                           "reset!", reset
                           "swap!", swap
+
+                          "readline", readline
                           ]
