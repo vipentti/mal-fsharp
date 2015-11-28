@@ -12,91 +12,96 @@
     let rec READ str =
         Reader.ReadStr str
 
-
-    and apply fn args = 
-        match fn with
-        | PrimitiveFunction(_, f) -> f args
-        | Function(_, _, body, binds, env) ->
-            let newEnv = makeNewEnv env binds args
-            EVAL body newEnv
-        | _ -> raise(Exception("Invalid function"))
-
-    and evalAst ast (env : EnvChain) = 
+    and evalAst (env : EnvChain) ast = 
         match ast with
         | Symbol v -> get env v
-        | List vs -> vs |> List.map (fun x -> EVAL x env) |> List
-        | Vector vs -> vs |> List.map (fun x -> EVAL x env) |> Vector
+        | List vs -> vs |> List.map (EVAL env) |> List
+        | Vector vs -> vs |> List.map (EVAL env) |> Vector
         | HashMap map ->
             map
-            |> Map.map (fun key value -> EVAL value env)
+            |> Map.map (fun key value -> EVAL env value)
             |> HashMap
         | _ -> ast
 
-    and EVAL ast (env : EnvChain) =
-        match ast with
 
-        | List (Symbol "do" :: rest)->
-            let evaled = evalAst (List rest) env
+    and ifForm env args = 
 
-            match evaled with 
-            | List results -> List.rev results |> List.head
-            | _ -> evaled
+        let innerIf condition trueForm falseForm = 
+            match EVAL env condition with
+            | Nil | Bool false -> falseForm
+            | _ -> trueForm
 
+        match args with
+        | [condition; trueForm; falseForm] -> innerIf condition trueForm falseForm
+        | [condition; trueForm] -> innerIf condition trueForm Nil
+        | _ -> raise(Exception("Invalid if Form"))
 
-        | List (Symbol "if" :: condition :: rest) ->
-            let evalCond = EVAL condition env
-            match evalCond, rest with
-            | Nil, [first; last] | Bool false, [first; last] ->
-                EVAL last env
-            | Nil, [first] | Bool false, [first] -> 
-                Nil
-            | _, [first] ->
-                EVAL first env
-            | _, [first; _] ->
-                EVAL first env
-            | _, _ -> 
-                raise (Exception("Invalid if form"))
+    and doForm env args =
+        match args with
+        | [a] -> a
+        | a::rest ->
+            EVAL env a |> ignore
+            doForm env rest
+        | _ -> raise(Exception("Something"))
 
-
-        | List [Symbol "def!"; Symbol name; form] ->
-            let evaled = EVAL form env
-            set env name evaled
-            evaled
-
-        | List [Symbol "let*"; bindings; calls] ->
+    
+    and letStarForm env args = 
+        match args with
+        | [bindings; calls] ->
             let newChain = makeNewEnv env [] []
 
             let updateEnv (key, value) =
                 match key with
-                | Symbol v -> set newChain v (EVAL value newChain)
+                | Symbol v -> set newChain v (EVAL newChain value)
                 | _ -> ()
             
             match bindings with 
             | List vs | Vector vs -> splitListToPairs vs |> List.iter updateEnv 
             | _ -> raise(Exception("Invalid let* form"))
 
-            EVAL calls newChain
+            newChain, calls
+            
+        | _ -> raise(Exception("Invalid form"))
+
+    and EVAL (env : EnvChain) ast =
+        match ast with
+
+        | List (Symbol "do" :: rest) -> doForm env rest |> EVAL env
+
+        | List (Symbol "if" :: rest) -> ifForm env rest |> EVAL env
+
+        | List [Symbol "def!"; Symbol name; form] ->
+            let evaled = EVAL env form
+            set env name evaled
+            evaled
+
+        | List (Symbol "let*" :: rest) ->
+            let newChain, calls = letStarForm env rest
+            EVAL newChain calls
 
         | List [Symbol "fn*"; (List args) | (Vector args); body] ->
             let temp = makeFunction Core.noop body args env
-
             temp
             
-            
         | List (func :: args) as item-> 
-            let values = evalAst item env
+            let values = evalAst env item
             match values with 
-            | List (func :: rest) ->
-                apply func rest
+            | List (func :: args) ->
+                match func with
+                | PrimitiveFunction(_, f) -> f args
+                | Function(_, _, body, binds, env) ->
+                    let newEnv = makeNewEnv env binds args
+                    body |> EVAL newEnv
+                | _ -> raise(Exception("Invalid function"))
             | _ -> raise(Exception("Invalid form"))
 
-        | _ -> evalAst ast env
+        | _ -> evalAst env ast
 
     and PRINT exp =
         Printer.PrStr exp
 
     and REP str =
-        str |> READ |> (fun x -> EVAL x initialEnv) |> PRINT true
+        str |> READ |> (EVAL initialEnv) |> PRINT true
 
     let read (prompt :string) = 
         Console.Write(prompt)
@@ -118,25 +123,3 @@
                     | ex -> printfn "%s" ex.Message
                 loop()
         loop()
-//    [<EntryPoint>]
-//    let main argv = 
-//        //printfn "%A" argv
-//
-//        let mutable running = true
-//
-//
-//        while running do
-//            Console.Write("user> ")
-//            let line = Console.ReadLine()
-//
-//            if line = null || line = "quit" then
-//                running <- false
-//            else
-//                //Console.WriteLine(REP line)
-//                try 
-//                    let result = REP line
-//                    Console.WriteLine(result)
-//                with
-//                    | ex -> printfn "%s" ex.Message
-//
-//        0 // return an integer exit code
