@@ -1,6 +1,6 @@
 ﻿module Reader 
-    open System.Text.RegularExpressions
     open Types
+    open System.Text.RegularExpressions
 
     let PATTERN = """[\s,]*(~@|[\[\]{}()'`~^@]|"(?:\\.|[^\\"])*"|;.*|[^\s\[\]{}('"`,;)]*)"""
     
@@ -50,7 +50,9 @@
 
             //NOTE(ville): The item at index 1 in each matched group is the actual match string
             if matches.Count > 0 then
-                [for m in matches -> (m.Groups.Item 1).Value.Trim()] |> List.filter (fun x -> x.Length > 0)
+                [for m in matches -> (m.Groups.Item 1).Value.Trim()] 
+                |> List.filter (fun x -> x.Length > 0)
+                |> List.filter (fun x -> not (x.StartsWith(";")))
             else
                 []
 
@@ -119,26 +121,6 @@
             ignore (reader.Next())
             lst
         | _ -> ReadUntil reader endChar (lst @ [ReadForm reader])
-
-    and splitListToPairs lst = 
-
-        let  splitList op lst =
-            lst 
-            |> Seq.mapi (fun i el -> el, i)
-            |> Seq.filter (fun (el, i) -> op (i % 2) 0)
-            |> Seq.map fst
-            |> Seq.toList
-
-        let takeEvenIndices = 
-            splitList (=)
-
-        let takeOddIndices = 
-            splitList (<>)
-        
-        let keys = takeEvenIndices lst
-        let vals = takeOddIndices lst
-
-        List.zip keys vals
     
 
     and ReadHashMap (reader : Reader) = 
@@ -170,11 +152,33 @@
         | "nil" -> Nil
         | "true" -> Bool true
         | "false" -> Bool false
-        | str when value.StartsWith("\"") -> String (str.Substring(1, str.Length - 2).Replace("\\\"", "\"").Replace("\\n", "\n").Replace("\\\\", "\\"))
-        | kw when value.StartsWith(":") -> Keyword ("\xff" + kw.Substring(1))
+        | str when value.StartsWith("\"") -> 
+            String (str.Substring(1, str.Length - 2).Replace("\\\"", "\"").Replace("\\n", "\n").Replace("\\\\", "\\"))
+        | kw when value.StartsWith(":") -> 
+            Keyword ("\xff" + kw.Substring(1))
         | _ ->
             try
                 let number = System.Int32.Parse(value)
                 Number number
             with
                 | _ -> Symbol value
+
+    and splitListToPairs lst = 
+
+        let  splitList op lst =
+            lst 
+            |> Seq.mapi (fun i el -> el, i)
+            |> Seq.filter (fun (el, i) -> op (i % 2) 0)
+            |> Seq.map fst
+            |> Seq.toList
+
+        let takeEvenIndices = 
+            splitList (=)
+
+        let takeOddIndices = 
+            splitList (<>)
+        
+        let keys = takeEvenIndices lst
+        let vals = takeOddIndices lst
+
+        List.zip keys vals
