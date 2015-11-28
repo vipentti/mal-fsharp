@@ -1,33 +1,27 @@
 ﻿module Main 
     open System
     open Reader
-    open Printer
     open Types
 
     open Env
 
-
     let initialEnv = makeRootEnv ()
 
-    let rec READ str =
-        Reader.ReadStr str
-
-    and evalAst (env : EnvChain) ast = 
+    let rec evalAst (env : EnvChain) ast = 
         match ast with
         | Symbol v -> get env v
-        | List vs -> vs |> List.map (EVAL env) |> List
-        | Vector vs -> vs |> List.map (EVAL env) |> Vector
+        | List vs -> vs |> List.map (eval env) |> List
+        | Vector vs -> vs |> List.map (eval env) |> Vector
         | HashMap map ->
             map
-            |> Map.map (fun key value -> EVAL env value)
+            |> Map.map (fun key value -> eval env value)
             |> HashMap
         | _ -> ast
-
 
     and ifForm env args = 
 
         let innerIf condition trueForm falseForm = 
-            match EVAL env condition with
+            match eval env condition with
             | Nil | Bool false -> falseForm
             | _ -> trueForm
 
@@ -40,7 +34,7 @@
         match args with
         | [a] -> a
         | a::rest ->
-            EVAL env a |> ignore
+            eval env a |> ignore
             doForm env rest
         | _ -> raise(Exception("Something"))
 
@@ -52,7 +46,7 @@
 
             let updateEnv (key, value) =
                 match key with
-                | Symbol v -> set newChain v (EVAL newChain value)
+                | Symbol v -> set newChain v (eval newChain value)
                 | _ -> ()
             
             match bindings with 
@@ -63,21 +57,21 @@
             
         | _ -> raise(Exception("Invalid form"))
 
-    and EVAL (env : EnvChain) ast =
+    and eval (env : EnvChain) ast =
         match ast with
 
-        | List (Symbol "do" :: rest) -> doForm env rest |> EVAL env
+        | List (Symbol "do" :: rest) -> doForm env rest |> eval env
 
-        | List (Symbol "if" :: rest) -> ifForm env rest |> EVAL env
+        | List (Symbol "if" :: rest) -> ifForm env rest |> eval env
 
         | List [Symbol "def!"; Symbol name; form] ->
-            let evaled = EVAL env form
+            let evaled = eval env form
             set env name evaled
             evaled
 
         | List (Symbol "let*" :: rest) ->
             let newChain, calls = letStarForm env rest
-            EVAL newChain calls
+            eval newChain calls
 
         | List [Symbol "fn*"; (List args) | (Vector args); body] ->
             let temp = makeFunction Core.noop body args env
@@ -89,19 +83,28 @@
             | List (func :: args) ->
                 match func with
                 | PrimitiveFunction(_, f) -> f args
-                | Function(_, _, body, binds, env) ->
-                    let newEnv = makeNewEnv env binds args
-                    body |> EVAL newEnv
+                | Function(_, _, body, binds, outer) ->
+                    let newEnv = makeNewEnv outer binds args
+                    body |> eval newEnv
                 | _ -> raise(Exception("Invalid function"))
             | _ -> raise(Exception("Invalid form"))
 
         | _ -> evalAst env ast
 
+    and READ str =
+        Reader.ReadStr str
+
     and PRINT exp =
         Printer.PrStr exp
 
+    and EVAL (env : EnvChain) ast =
+        eval env ast
+
     and REP str =
-        str |> READ |> (EVAL initialEnv) |> PRINT true
+        str 
+        |> READ 
+        |> (EVAL initialEnv) 
+        |> PRINT true
 
     let read (prompt :string) = 
         Console.Write(prompt)
@@ -117,6 +120,7 @@
             match read "user> " with
             | null -> 0
             | input -> 
+                //printfn "%s" (REP input)
                 try 
                     printfn "%s" (REP input)
                 with
