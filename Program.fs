@@ -7,12 +7,12 @@
 
     let rec evalAst (env : EnvChain) =  function
         | Symbol v -> get env v
-        | List vs -> vs |> List.map (eval env) |> List
-        | Vector vs -> vs |> List.map (eval env) |> Vector
-        | HashMap map ->
+        | List (_, vs) -> vs |> List.map (eval env) |> makeList
+        | Vector (_, vs) -> vs |> List.map (eval env) |> makeVector
+        | HashMap (_, map) ->
             map
             |> Map.map (fun key value -> eval env value)
-            |> HashMap
+            |> makeHashMap
         | item -> item
 
     and ifForm env args = 
@@ -47,7 +47,7 @@
                 | _ -> ()
             
             match bindings with 
-            | List vs | Vector vs -> splitListToPairs vs |> List.iter updateEnv 
+            | List (_, vs) | Vector (_, vs) -> splitListToPairs vs |> List.iter updateEnv 
             | _ -> raise(Exception("Invalid let* form"))
 
             newChain, calls
@@ -57,43 +57,43 @@
 
     and isNonEmpty args = 
         match args with 
-        | (List vs) | (Vector vs) -> vs.Length > 0
+        | (List (_, vs)) | (Vector (_, vs)) -> vs.Length > 0
         | _ -> false
 
 
     //NOTE(ville): Do we actually need this ?
     and convertVectorToList args = 
         match args with
-        | Vector vs -> 
+        | Vector (_, vs) -> 
             vs
             |> List.map convertVectorToList
-            |> Types.List
+            |> makeList
         | _ -> args
 
     and quasiquote ast = 
         match (isNonEmpty ast), (convertVectorToList ast) with
-        | false, _ -> List ((Symbol "quote") :: [ast])
-        | _, List [Symbol "unquote"; rest] -> rest
+        | false, _ -> makeList ((Symbol "quote") :: [ast])
+        | _, List (_, [Symbol "unquote"; rest])-> rest
 
-        | true, List (List (Symbol "splice-unquote" :: spliceArgs) :: restArgs) ->
-            let restQuasi = quasiquote (List restArgs)
-            List ([Symbol "concat"] @ spliceArgs @ [restQuasi])
+        | true, List (_, List (_, Symbol "splice-unquote" :: spliceArgs) :: restArgs) ->
+            let restQuasi = quasiquote (makeList restArgs)
+            makeList ([Symbol "concat"] @ spliceArgs @ [restQuasi])
 
-        | _, List (xs :: rest) -> 
-            List ([Symbol "cons"] @ [quasiquote xs] @ [quasiquote (List rest)])
+        | _, List (_, xs :: rest) -> 
+            makeList ([Symbol "cons"] @ [quasiquote xs] @ [quasiquote (makeList rest)])
 
         | _, _ -> raise(Exception("Invalis quasiquote form"))
 
     and macroexpand env ast = 
         let get_macro_call env = function 
-            | List (Symbol name :: rest) ->
+            | List (_, (Symbol name :: rest)) ->
                 match (find env name) with
                 | Some(Macro(_)) as m -> m, rest
                 | _ -> None, []
             | _ -> None, []
 
         match get_macro_call env ast with
-        | Some(Macro(_, f, _, _, _)), rest -> 
+        | Some(Macro(_, _, f, _, _, _)), rest -> 
             f rest |> macroexpand env
         | _, _ -> ast 
 
@@ -107,7 +107,7 @@
             Env.makeFunction f body binds outer
 
         match ast with
-        | [(List args) | (Vector args); body] ->
+        | [(List (_, args)) | (Vector (_, args)); body] ->
             func args body
 
         | _ -> raise(Exception("Invalid fn* form"))
@@ -115,7 +115,7 @@
     and tryCatchForm env = function
         | [tryBlock; catchBlock] -> 
             match catchBlock with
-            | List [Symbol "catch*"; exc; form] ->
+            | List (_, [Symbol "catch*"; exc; form]) ->
                 try 
                     eval env tryBlock
                 with
@@ -132,41 +132,40 @@
         | _ -> Nil
 
     and eval (env : EnvChain) = function
-        | List _ as item -> 
-            match macroexpand env item with
-            | List (Symbol "do" :: rest) -> doForm env rest |> eval env
-            | List (Symbol "if" :: rest) -> ifForm env rest |> eval env
-            | List [Symbol "def!"; Symbol name; form] ->
+        | List _ as outerAst -> 
+            match macroexpand env outerAst with
+            | List (_, (Symbol "do" :: rest)) -> doForm env rest |> eval env
+            | List (_, (Symbol "if" :: rest)) -> ifForm env rest |> eval env
+            | List (_, [Symbol "def!"; Symbol name; form]) ->
                 let evaled = eval env form
                 set env name evaled
                 evaled
-            | List [Symbol "defmacro!"; Symbol name; form] ->
+            | List (_, [Symbol "defmacro!"; Symbol name; form]) ->
                 let evaled = eval env form
                 match evaled with
-                | Function(_, f, body, binds, outer) ->
+                | Function(_, _, f, body, binds, outer) ->
                     let macro = Env.makeMacro f body binds outer
                     set env name macro
                     macro
                 | _ -> raise(Exception("Invalid macro form"))
 
             
-            | List (Symbol "try*" :: rest) -> tryCatchForm env rest
-
-            | List (Symbol "let*" :: rest) ->
+            | List (_, (Symbol "try*" :: rest)) -> tryCatchForm env rest
+            | List (_, (Symbol "let*" :: rest)) ->
                 let newChain, calls = letStarForm env rest
                 eval newChain calls
 
-            | List (Symbol "fn*" :: rest) -> fnStarForm env rest
-            | List [Symbol "quote"; rest] -> rest
-            | List [Symbol "quasiquote"; rest] -> quasiquote rest |> eval env 
-            | List [Symbol "macroexpand"; args] -> macroexpand env args
-            | List (_ :: _) as item-> 
+            | List (_, (Symbol "fn*" :: rest)) -> fnStarForm env rest
+            | List (_, [Symbol "quote"; rest]) -> rest
+            | List (_, [Symbol "quasiquote"; rest]) -> quasiquote rest |> eval env 
+            | List (_, [Symbol "macroexpand"; args]) -> macroexpand env args
+            | List (_, _) as item -> 
                 let values = evalAst env item
                 match values with 
-                | List (func :: args) ->
+                | List (_, (func :: args)) ->
                     match func with
-                    | PrimitiveFunction(_, f) -> f args
-                    | Function(_, _, body, binds, outer) ->
+                    | PrimitiveFunction(_, _, f) -> f args
+                    | Function(_, _, _, body, binds, outer) ->
                         let newEnv = makeNewEnv outer binds args
                         body |> eval newEnv
                     | _ -> raise(Exception("Invalid function"))
@@ -216,7 +215,7 @@
             tempArgs
             |> Array.map Types.String
             |> Array.toList
-            |> Types.List
+            |> makeList
 
         set env "*ARGV*" malArgs
 

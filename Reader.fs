@@ -111,10 +111,10 @@
         let macro = reader.Next()
 
         match macro with 
-        | "'" -> List ((Symbol "quote") :: [ReadForm reader])
-        | "`" -> List ((Symbol "quasiquote") :: [ReadForm reader])
-        | "~" -> List ((Symbol "unquote") :: [ReadForm reader])
-        | "~@" -> List ((Symbol "splice-unquote") :: [ReadForm reader])
+        | "'" -> makeList ((Symbol "quote") :: [ReadForm reader])
+        | "`" -> makeList ((Symbol "quasiquote") :: [ReadForm reader])
+        | "~" -> makeList ((Symbol "unquote") :: [ReadForm reader])
+        | "~@" -> makeList ((Symbol "splice-unquote") :: [ReadForm reader])
         | _ -> Nil
         
 
@@ -136,17 +136,18 @@
             splitListToPairs values
             |> Map.ofList
 
-        HashMap result
+        //HashMap result
+        makeHashMap result
 
     and ReadList (reader : Reader) = 
         //Skip the initial (
         ignore (reader.Next())
 
-        List (ReadUntil reader ")" [])
+        makeList (ReadUntil reader ")" [])
 
     and ReadVector (reader : Reader) = 
         ignore (reader.Next())
-        Vector (ReadUntil reader "]" [])
+        makeVector (ReadUntil reader "]" [])
 
     and ReadAtom (reader : Reader) = 
         let value = reader.Next()

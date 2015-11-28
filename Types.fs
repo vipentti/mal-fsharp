@@ -6,19 +6,18 @@
     [<CustomEquality;CustomComparison>]
     type MalType =
         | Nil
-        | List of list<MalType>
-        | Vector of list<MalType>
+        | List of MetaData * list<MalType>
+        | Vector of MetaData * list<MalType>
         | Bool of bool
         | Symbol of string
         | String of string
         | Keyword of string
         | Number of int
-        | HashMap of Collections.Map<MalType, MalType>
-        | PrimitiveFunction of int * (list<MalType> -> MalType)
-        | Function of int * (list<MalType> -> MalType) * MalType * list<MalType> * EnvChain 
-        | Macro of int * (list<MalType> -> MalType) * MalType * list<MalType> * EnvChain 
-//        | Atom of string
-
+        | HashMap of MetaData * Collections.Map<MalType, MalType>
+        | PrimitiveFunction of MetaData * int * (list<MalType> -> MalType)
+        | Function of MetaData * int * (list<MalType> -> MalType) * MalType * list<MalType> * EnvChain 
+        | Macro of MetaData * int * (list<MalType> -> MalType) * MalType * list<MalType> * EnvChain 
+        | Atom of int * MalType Ref
 
         static member private hashSeq (s : seq<MalType>) =
             let iter st node = (st * 397) ^^^ node.GetHashCode()
@@ -66,46 +65,44 @@
             | PrimitiveFunction(_) -> 9
             | Function(_) -> 9
             | Macro(_) -> 9
-//            | Atom(_, _) -> 10
+            | Atom(_, _) -> 10
 
         static member private equals x y =
             match x, y with
             | Nil, Nil -> true
-            | List(a), List(b) -> a = b
-            | List(a), Vector(b) -> MalType.allEqual a b
-            | Vector(a), List(b) -> MalType.allEqual a b
-            | Vector(a), Vector(b) -> MalType.allEqual a b
-            | HashMap(a), HashMap(b) -> a = b
+            | List(_, a), List(_, b) -> a = b
+            | List(_, a), Vector(_, b) -> MalType.allEqual a b
+            | Vector(_, a), List(_, b) -> MalType.allEqual a b
+            | Vector(_, a), Vector(_, b) -> MalType.allEqual a b
+            | HashMap(_, a), HashMap(_, b) -> a = b
             | Symbol(a), Symbol(b) -> a = b
             | Keyword(a), Keyword(b) -> a = b
             | Number(a), Number(b) -> a = b
             | String(a), String(b) -> a = b
             | Bool(a), Bool(b) -> a = b
-            | (PrimitiveFunction(a, _) | Function (a, _, _, _, _) | Macro (a, _, _, _, _)), 
-              (PrimitiveFunction(b, _) | Function (b, _, _, _, _) | Macro (b, _, _, _, _)) -> 
+            | (PrimitiveFunction(_, a, _) | Function (_, a, _, _, _, _) | Macro (_, a, _, _, _, _)), 
+              (PrimitiveFunction(_, b, _) | Function (_, b, _, _, _, _) | Macro (_, b, _, _, _, _)) -> 
                 a = b
-//            | Atom(a, _), Atom(b, _) -> a = b
+            | Atom(a, _), Atom(b, _) -> a = b
             | _, _ -> false
 
         static member private compare x y =
             match x, y with
             | Nil, Nil -> 0
-            | List(a), List(b) -> compare a b
-            | List(a), Vector(b) -> MalType.allCompare a b
-            | Vector(a), List(b) -> MalType.allCompare a b
-            | Vector(a), Vector(b) -> MalType.allCompare a b
-            | HashMap(a), HashMap(b) -> compare a b
+            | List(_, a), List(_, b) -> compare a b
+            | List(_, a), Vector(_, b) -> MalType.allCompare a b
+            | Vector(_, a), List(_, b) -> MalType.allCompare a b
+            | Vector(_, a), Vector(_, b) -> MalType.allCompare a b
+            | HashMap(_, a), HashMap(_, b) -> compare a b
             | Symbol(a), Symbol(b) -> compare a b
             | Keyword(a), Keyword(b) -> compare a b
             | Number(a), Number(b) -> compare a b
             | String(a), String(b) -> compare a b
             | Bool(a), Bool(b) -> compare a b
-//            | PrimitiveFunction(a, _), PrimitiveFunction(b, _) -> compare a b
-
-            | (PrimitiveFunction(a, _) | Function (a, _, _, _, _) | Macro(a, _, _ ,_ ,_)), 
-              (PrimitiveFunction(b, _) | Function (b, _, _, _, _) | Macro(b, _, _ ,_ ,_)) -> 
+            | (PrimitiveFunction(_, a, _) | Function (_, a, _, _, _, _) | Macro(_, a, _, _ ,_ ,_)), 
+              (PrimitiveFunction(_, b, _) | Function (_, b, _, _, _, _) | Macro(_, b, _, _ ,_ ,_)) -> 
                 compare a b
-//            | Atom(a, _), Atom(b, _) -> compare a b
+            | Atom(a, _), Atom(b, _) -> compare a b
             | a, b -> compare (MalType.rank a) (MalType.rank b)
 
 
@@ -117,17 +114,17 @@
         override x.GetHashCode() =
             match x with
             | Nil -> 0
-            | List(lst) -> hash lst
-            | Vector(vec) -> MalType.hashSeq vec
-            | HashMap(map) -> hash map
+            | List(_, lst) -> hash lst
+            | Vector(_, vec) -> MalType.hashSeq vec
+            | HashMap(_, map) -> hash map
             | Symbol(sym) -> hash sym
             | Keyword(key) -> hash key
             | Number(num) -> hash num
             | String(str) -> hash str
             | Bool(b) -> hash b
-            | PrimitiveFunction(tag, _) | Function(tag, _, _, _, _) | Macro(tag, _, _, _, _) ->
+            | PrimitiveFunction(_, tag, _) | Function(_, tag, _, _, _, _) | Macro(_, tag, _, _, _, _) ->
                 hash tag
-//            | Atom(tag, _) -> hash tag
+            | Atom(tag, _) -> hash tag
 
         interface System.IComparable with
             member x.CompareTo yobj =
@@ -138,5 +135,12 @@
 
     and Env = System.Collections.Generic.Dictionary<string, MalType>
     and EnvChain = Env list
+    and MetaData = MalType
 
     exception MalException of MalType
+
+
+    let makeHashMap s = HashMap(Nil, s)
+    let makeList s = List(Nil, s)
+    let makeVector s = Vector(Nil, s)
+

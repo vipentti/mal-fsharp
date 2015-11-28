@@ -5,7 +5,7 @@
     let rec unpackNumber value = 
         match value with 
         | Number x -> x
-        | List [n] -> unpackNumber n
+        | List (_, [n]) -> unpackNumber n
         | String x -> int(float(x))
         | _        -> raise (Exception("Typemismatch"))
 
@@ -18,12 +18,12 @@
 
     let isEmpty args = 
         match args with 
-        | ((List xs) | (Vector xs)) :: anything -> Bool (xs.Length = 0)
+        | ((List (_, xs)) | (Vector (_, xs))) :: anything -> Bool (xs.Length = 0)
         | _ -> Bool false
 
     let count args = 
         match args with 
-        | ((List xs) | (Vector xs)) :: anything -> Number xs.Length
+        | ((List (_, xs)) | (Vector (_, xs))) :: anything -> Number xs.Length
         | _ -> Number 0
 
     let equal args = 
@@ -90,26 +90,26 @@
 
     let cons args = 
         match args with
-        | value :: ([List items] | [Vector items]) -> List (value :: items)
+        | value :: ([List (m, items)] | [Vector (m, items)]) -> List (m, value :: items)
         | _ -> raise(Exception("Invalid cons arguments"))
 
     let concat args = 
         match args with
-        | []-> List []
-        | (List vs :: rest) | (Vector vs :: rest) ->
+        | []-> List (Nil, [])
+        | (List (_, vs) :: rest) | (Vector (_, vs) :: rest) ->
             let result = 
                 args
-                |> List.map (function | (List xs | Vector xs) -> xs | _ -> [])
+                |> List.map (function | (List (_, xs) | Vector (_, xs)) -> xs | _ -> [])
                 |> List.filter (fun x -> x.Length > 0)
                 |> List.concat
 
-            List result
+            List (Nil, result)
         | _ -> raise(Exception("Invalid concat arguments"))
 
     
     let nth = function
         | [] -> Nil
-        | ((List vs) | (Vector vs)) :: [Number n] -> 
+        | ((List (_, vs)) | (Vector (_, vs))) :: [Number n] -> 
             if n > vs.Length - 1 || n < 0 then
                 raise(Exception("Index out of range " + n.ToString()))
             else
@@ -118,17 +118,17 @@
         | _ -> raise(Exception("Invalid nth arguments"))
 
     let first = function
-        | [(List vs) | (Vector vs)]-> 
+        | [(List (_, vs)) | (Vector (_, vs))]-> 
             match vs with
             | [] -> Nil
             | _  -> List.head vs
         | _ -> Nil
 
     let rest = function
-        | [(List vs) | (Vector vs)] -> 
+        | [(List (_, vs)) | (Vector (_, vs))] -> 
             match vs with
-            | [] -> List []
-            | _  -> List (List.tail vs)
+            | [] -> List (Nil, [])
+            | _  -> List (Nil, (List.tail vs))
         | _ -> Nil
 
 
@@ -161,36 +161,33 @@
                 |> List.head
             
             match func, finalArg with
-            | (PrimitiveFunction(_, f) | Function(_, f, _, _, _)), 
-              (List vs | Vector vs) -> 
+            | (PrimitiveFunction(_, _, f) | Function(_, _, f, _, _, _)), 
+              (List (_, vs) | Vector (_, vs)) -> 
                 f (variableArgs @ vs)
             | _ -> raise(Exception("Invalid apply arguments"))
         | _ -> raise(Exception("Invalid apply arguments"))
 
     
     let map = function
-        | func :: [List vs | Vector vs] ->
+        | func :: [List (_, vs) | Vector (_, vs)] ->
             match func with
-            | (PrimitiveFunction(_, f) | Function(_, f, _, _, _)) ->
-                vs
-                |> List.map (fun x -> f [x])
-                |> Types.List
+            | (PrimitiveFunction(_, _, f) | Function(_, _, f, _, _, _)) ->
+                let temp = 
+                    vs
+                    |> List.map (fun x -> f [x])
+
+                List (Nil, temp)
             | _ -> raise(Exception("Invalid apply arguments"))
         | _ -> raise(Exception("Invalid apply arguments"))
-
-
-    let vector = function
-        | args ->
-            Vector args
 
     let hashMap = function
         | args -> 
             Reader.splitListToPairs args
             |> Map.ofList
-            |> HashMap
+            |> makeHashMap
 
     let assoc = function
-        | (HashMap mp) :: args ->
+        | (HashMap (_, mp)) :: args ->
             let nextMap = 
                 Reader.splitListToPairs args
                 |> Map.ofList
@@ -198,21 +195,21 @@
             let ret = 
                 Map.fold (fun acc key value -> Map.add key value acc) mp nextMap
 
-            HashMap ret
+            makeHashMap ret
 
         | _ -> raise(Exception("Invalid arguments"))
 
     let dissoc = function
-        | (HashMap mp) :: args -> 
+        | (HashMap (_, mp)) :: args -> 
 
             mp
             |> Map.filter (fun key _ -> not (List.exists (fun x -> x = key) args))
-            |> HashMap
+            |> makeHashMap
 
         | _ -> raise(Exception("Invalid arguments"))
 
     let get = function
-        | [(HashMap mp); key] ->
+        | [(HashMap (_, mp)); key] ->
             if mp.ContainsKey key then
                 mp.[key]
             else
@@ -220,24 +217,24 @@
         | _ -> Nil
 
     let contains = function
-        | [(HashMap mp); key] ->
+        | [(HashMap (_, mp)); key] ->
             Bool (mp.ContainsKey key)
         | _ -> raise(Exception("Invalid arguments"))
 
     let keys = function
-        | [HashMap mp] ->
+        | [HashMap (_, mp)] ->
             mp
             |> Map.toList
             |> List.map fst
-            |> Types.List
+            |> makeList
         | _ -> raise(Exception("Invalid arguments"))
 
     let vals = function
-        | [HashMap mp] ->
+        | [HashMap (_, mp)] ->
             mp
             |> Map.toList
             |> List.map snd
-            |> Types.List
+            |> makeList
         | _ -> raise(Exception("Invalid arguments"))
     
     let sequential = isOfPattern (function Vector _ | List _ -> true | _ -> false)
@@ -250,7 +247,7 @@
                           "-", singleMathOp (-)
                           "*", singleMathOp (*)
                           "/", singleMathOp (fun x y -> int (x / y))
-                          "list", List
+                          "list", makeList
                           "list?", isList
                           "empty?", isEmpty
                           "count", count
@@ -295,7 +292,7 @@
                           "keyword?", isKeyword
                           "vector?", isVector
 
-                          "vector", vector
+                          "vector", makeVector
 
 
                           "assoc", assoc

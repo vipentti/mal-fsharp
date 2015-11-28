@@ -14,10 +14,10 @@
         | String v -> printString readably v 
         | Keyword v -> ":" + v.Substring(1)
         | Bool v -> match v with | true -> "true" | false -> "false"
-        | List vs -> 
+        | List (_, vs) -> 
             List.map (PrStr readably) vs |> String.concat " " |> (fun x -> "(" + x + ")")
 
-        | Vector vs -> 
+        | Vector (_, vs) -> 
             List.map (PrStr readably) vs |> String.concat " " |> (fun x -> "[" + x + "]")
 
         | Nil -> "nil"
@@ -28,9 +28,11 @@
 
         | Macro _ -> "#<macro>"
 
-        | HashMap v ->
+        | HashMap (_, v) ->
             v
             |> Map.toList
             |> List.map (fun (key, value) -> (PrStr readably key) + " " + (PrStr readably value))
             |> String.concat " "
             |> (fun x -> "{" + x + "}")
+
+        | Atom (_, v) -> "#<atom>"

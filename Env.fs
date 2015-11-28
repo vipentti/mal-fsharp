@@ -35,7 +35,7 @@
         let rec loop binds exprs = 
             match binds, exprs with
             | Symbol "&" :: [Symbol name], ns ->
-                set newChain name (List ns)
+                set newChain name (makeList ns)
                 newChain
             | Symbol s :: symbs, n :: ns ->
                 set newChain s n
@@ -46,13 +46,13 @@
         loop binds exprs
 
     let makePrimitiveFunction f = 
-        PrimitiveFunction(getNextValue(), f)
+        PrimitiveFunction(Nil, getNextValue(), f)
 
     let makeFunction f body binds env = 
-        Function(getNextValue(), f, body, binds, env)
+        Function(Nil, getNextValue(), f, body, binds, env)
 
     let makeMacro f body binds env = 
-        Macro(getNextValue(), f, body, binds, env)
+        Macro(Nil, getNextValue(), f, body, binds, env)
 
     let makeRootEnv () = 
         let env = makeEmptyEnv()
