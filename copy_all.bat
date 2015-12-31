@@ -19,7 +19,7 @@ set ENABLED_STEPS=%step1% %step2% %step3% %step4% %step5% %step6% %step7% %step8
 
 (for %%a in (%ENABLED_STEPS%) do (
    echo Step:  %%a
-   CALL build.bat %%a.exe %1 %2 %DEST_DIR%
+   CALL copy_to.bat %%a.exe %1 %2 %DEST_DIR%
 ))
 
 rem CALL build.bat step4_if_fn_do.exe %1 %2 %DEST_DIR%
