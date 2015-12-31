@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.24720.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "mal-vsharp", "mal-vsharp.fsproj", "{17A0D864-CE26-42BA-84CC-E688557E96FA}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "mal-fsharp", "mal-fsharp.fsproj", "{17A0D864-CE26-42BA-84CC-E688557E96FA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
